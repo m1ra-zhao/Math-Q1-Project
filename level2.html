@@ -95,28 +95,31 @@
     <script>
         // 开场教程提示：8s 后弹回，或点击物品栏槽位/按数字键时弹回
         const tutorialToast = document.getElementById('tutorial-toast');
-        if (tutorialToast) {
-            requestAnimationFrame(() => tutorialToast.classList.add('show'));
-            let tutorialDismissed = false;
-            let tutorialAutoTimer = null;
-            function dismissTutorialToast() {
-                if (tutorialDismissed) return;
-                tutorialDismissed = true;
-                tutorialToast.classList.remove('show');
-                document.removeEventListener('click', dismissTutorialToastOnSlotClick, true);
-                document.removeEventListener('keydown', dismissTutorialToastOnKey);
-                if (tutorialAutoTimer) clearTimeout(tutorialAutoTimer);
-            }
-            // 捕获阶段监听：槽位自身的 click 处理器有 stopPropagation，捕获阶段仍能收到
-            function dismissTutorialToastOnSlotClick(event) {
-                if (event.target.closest && event.target.closest('#hotbar')) dismissTutorialToast();
-            }
-            function dismissTutorialToastOnKey(event) {
-                if (event.key >= '1' && event.key <= '9') dismissTutorialToast();
-            }
-            tutorialAutoTimer = setTimeout(dismissTutorialToast, 8000);
+        let tutorialDismissed = false;
+        let tutorialAutoTimer = null;
+        function dismissTutorialToast() {
+            if (tutorialDismissed) return;
+            tutorialDismissed = true;
+            if (tutorialToast) tutorialToast.classList.remove('show');
+            document.removeEventListener('click', dismissTutorialToastOnSlotClick, true);
+            document.removeEventListener('keydown', dismissTutorialToastOnKey);
+            if (tutorialAutoTimer) clearTimeout(tutorialAutoTimer);
+        }
+        // 在 Treasure Hunter 弹窗(advancement)弹回后弹出，8s 后弹回，或点击物品栏槽位/按数字键提前弹回
+        function showTutorialToast() {
+            if (!tutorialToast || tutorialDismissed || tutorialToast.classList.contains('show')) return;
+            tutorialToast.classList.add('show');
+            // 教程真正显示后才启用关闭监听，避免教程出现前误按数字键/点 hotbar 把 tutorialDismissed 提前锁死
             document.addEventListener('click', dismissTutorialToastOnSlotClick, true);
             document.addEventListener('keydown', dismissTutorialToastOnKey);
+            tutorialAutoTimer = setTimeout(dismissTutorialToast, 8000);
+        }
+        // 捕获阶段监听：槽位自身的 click 处理器有 stopPropagation，捕获阶段仍能收到
+        function dismissTutorialToastOnSlotClick(event) {
+            if (event.target.closest && event.target.closest('#hotbar')) dismissTutorialToast();
+        }
+        function dismissTutorialToastOnKey(event) {
+            if (event.key >= '1' && event.key <= '9') dismissTutorialToast();
         }
 
         const scale = document.getElementById('number-scale');
@@ -290,15 +293,18 @@
                 });
             });
 
-            fly.addEventListener('transitionend', () => {
+            // 飞行动画 0.8s 结束后：移除飞行元素、药水入槽、弹 Treasure Hunter；
+            // 停留 2s 弹回后再弹出 hotbar 使用教程。用 setTimeout 替代 transitionend，
+            // 避免动画事件丢失（如浏览器减弱动效）导致教程弹窗不出现。
+            setTimeout(() => {
                 fly.remove();
                 potionInSlot.classList.add('show');
                 advancementToast.classList.add('show');
-                // 停留 2 秒后弹回
                 setTimeout(() => {
                     advancementToast.classList.remove('show');
+                    showTutorialToast();
                 }, 2000);
-            }, { once: true });
+            }, 800);
         }
 
         // Steve picks up the potion by touching it (checked every frame)

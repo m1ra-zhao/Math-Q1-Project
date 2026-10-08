@@ -98,6 +98,16 @@
         </div>
     </div>
 
+    <!-- Crossbow 教程弹窗：玩家首次选中弩时右上角弹出 -->
+    <div id="crossbow-tutorial" class="tutorial-toast">
+        <img src="pngs/tutorial.png" alt="" class="tutorial-toast-bg">
+        <img src="pngs/mouse.png" alt="" class="tutorial-toast-icon">
+        <div class="tutorial-toast-text">
+            <div class="tutorial-line-title">Crossbow</div>
+            <div class="tutorial-line-body">Click screen to use.</div>
+        </div>
+    </div>
+
     <!-- 答题弹窗：击中 -64 水晶后输入 z^4=64cis pi 的四个根 -->
     <div id="quiz-modal" class="quiz-modal">
         <div class="quiz-title">z^4=64cis pi, z=? </div>
@@ -152,7 +162,8 @@
 
         if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 
-        // 把原点居中到视口中央（用 getBoundingClientRect 对齐视觉中心，缩放后仍保持居中）
+        // 把原点居中到视口中央。world 的 transform-origin 是 50% 50%（原点=world 中心），
+        // 缩放围绕中心点进行，故 world 视觉中心与 scrollLeft 是 1:1 线性关系，无需按 scale 折算。
         function centerCamera() {
             if (!numberLineWrap || !world) return;
             const wr = numberLineWrap.getBoundingClientRect();
@@ -372,26 +383,20 @@
             requestAnimationFrame(step);
         }
 
-        // 玩家限制在中央 40% 区域，碰到界线就以 1:1 同速滚动页面
-        const EDGE = 0.3;
+        // 让史蒂夫始终锁定在屏幕正中央：相机反向滚动世界，使史蒂夫视觉中心对齐 wrap 中心与窗口中心。
+        // world 的 scale 围绕其中心(原点)进行，史蒂夫与 world 刚性绑定，随 scrollLeft / window.scrollY 均按 1:1 移动（无需按 scale 折算）。
         function followSteveIntoView() {
             if (!steve || !numberLineWrap) return;
             const steveRect = steve.getBoundingClientRect();
             const wrapRect = numberLineWrap.getBoundingClientRect();
-            const marginX = numberLineWrap.clientWidth * EDGE;
-            const leftLimit = wrapRect.left + marginX;
-            const rightLimit = wrapRect.left + numberLineWrap.clientWidth - marginX;
-            if (steveRect.left < leftLimit) {
-                numberLineWrap.scrollLeft -= leftLimit - steveRect.left;
-            } else if (steveRect.right > rightLimit) {
-                numberLineWrap.scrollLeft += steveRect.right - rightLimit;
-            }
-            const marginY = window.innerHeight * EDGE;
-            if (steveRect.top < marginY) {
-                window.scrollBy(0, steveRect.top - marginY);
-            } else if (steveRect.bottom > window.innerHeight - marginY) {
-                window.scrollBy(0, steveRect.bottom - (window.innerHeight - marginY));
-            }
+            // 横向：把史蒂夫视觉中心滚到 wrap 中心
+            numberLineWrap.scrollLeft += (steveRect.left + steveRect.width / 2) - (wrapRect.left + wrapRect.width / 2);
+            // 纵向：把史蒂夫视觉中心滚到窗口中心
+            window.scrollBy(0, (steveRect.top + steveRect.height / 2) - window.innerHeight / 2);
+            // 夹紧横向滚动范围，避免滚进黑底空白区域
+            const maxScrollX = numberLineWrap.scrollWidth - numberLineWrap.clientWidth;
+            if (numberLineWrap.scrollLeft < 0) numberLineWrap.scrollLeft = 0;
+            else if (maxScrollX > 0 && numberLineWrap.scrollLeft > maxScrollX) numberLineWrap.scrollLeft = maxScrollX;
         }
 
         // ================= 开场：Welcome 横幅 3s → 画面缩放到 50 格视角 =================
@@ -648,6 +653,8 @@
         let shotsFired = 0;
         let crossbowLoaded = true;
         let crossbowRefilling = false;
+        const crossbowTutorial = document.getElementById('crossbow-tutorial');
+        let crossbowTipShown = false;
 
         const crossbowImg = document.createElement('img');
         crossbowImg.className = 'slot-item crossbow-in-slot';
@@ -695,6 +702,11 @@
             selectedSlot = idx;
             slotEls.forEach((el, i) => el.classList.toggle('selected', i === idx));
             mapOverlay.classList.toggle('show', idx === 1); // 选中地图时展示地图
+            if (idx === 0 && !crossbowTipShown) {
+                crossbowTipShown = true;
+                crossbowTutorial.classList.add('show');
+                setTimeout(() => crossbowTutorial.classList.remove('show'), 8000);
+            }
         }
 
         function updateDurabilityBar() {
@@ -1207,8 +1219,10 @@
         });
 
         // 点击屏幕 = 使用选中的物品（槽位 1 弩箭 → 询问坐标；槽位 2 地图随选中显示）
-        document.addEventListener('click', () => {
+        document.addEventListener('click', (event) => {
             if (modalOpen() || hasWon || hasFailed) return;
+            // 点击瞄准/答题弹窗内部不触发弩箭瞄准
+            if (event.target.closest && event.target.closest('.quiz-modal')) return;
             if (selectedSlot === 0) tryOpenAim();
         });
 
@@ -1267,6 +1281,13 @@
         renderDragon();
         startIntro();
         requestAnimationFrame(frameLoop);
+
+        // 布局/字体/图片加载完成后多时机校正居中（兼容不同屏幕尺寸，让史蒂夫稳定居中）
+        requestAnimationFrame(centerCamera);
+        window.addEventListener('load', centerCamera);
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(centerCamera);
+        setTimeout(centerCamera, 300);
+        setTimeout(centerCamera, 6500); // 开场缩放动画结束后再校正一次
     </script>
 </body>
 </html>
