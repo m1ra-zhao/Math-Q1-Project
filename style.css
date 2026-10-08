@@ -1,0 +1,3514 @@
+@font-face {
+    font-family: Minecraft;
+    src: url("Minecraftia-Regular.ttf");
+}
+
+@font-face {
+    font-family: MinecraftChinese;
+    src: url("[Minecraft_Next_Font_12px2.0.ttf");
+}
+
+#home-page,
+#game-page {
+    position: relative;
+
+    width: 100vw;
+    height: 100vh;
+    min-height: 720px;
+    margin: 0 auto;
+    padding-top: 1.56vw;
+
+    box-sizing: border-box;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    background-image: url("pngs/Background.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+#game-page {
+    position: fixed;
+    inset: 0;
+    display: none;
+    z-index: 30;
+    background: rgba(0, 0, 0, 0.85);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.game-bg {
+    display: none;
+}
+
+.game-page-scroll {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    min-height: 100vh;
+    padding-top: 10vh;
+    padding-bottom: 14vh;
+    box-sizing: border-box;
+}
+
+#game-page h1 {
+    margin-top: 12vh;
+    text-align: center;
+    color: white;
+    font-family: Minecraft, sans-serif;
+    font-size: clamp(52px, 5vw, 92px);
+    text-shadow: 4px 4px 0 #555555;
+}
+
+.game-level-btn {
+    width: 75vh;
+    max-width: 600px;
+    height: 7.5vh;
+    max-height: 60px;
+    margin-top: 2vh;
+    margin-bottom: 2vh;
+}
+
+.game-level-btn:last-child {
+    margin-bottom: 6vh;
+}
+
+.game-level-btn {
+    position: relative;
+}
+
+.level-passed-badge {
+    display: none;
+    position: absolute;
+    right: 0.7vh;
+    bottom: 0.25vh;
+    color: #ffff55;
+    font-family: Minecraft, sans-serif;
+    font-size: 26px;
+    line-height: 1;
+    text-shadow: 2px 2px 0 #555555;
+    transform: rotate(-12deg);
+    transform-origin: bottom right;
+    animation: passed-splash 0.8s infinite alternate;
+}
+
+.game-level-btn.is-passed .level-passed-badge {
+    display: block;
+}
+
+@keyframes passed-splash {
+    from {
+        opacity: 0.7;
+        transform: rotate(-12deg) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: rotate(-12deg) scale(1.05);
+    }
+}
+
+body {
+    background-image: url("pngs/Background.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+
+    text-align: center;
+    font-family: Minecraft, sans-serif;
+
+    margin: 0;
+    padding: 0;
+
+    min-width: 100vw;
+    min-height: 100vh;
+}
+
+h1 {
+    font-size: clamp(70px, 6.5vw, 125px);
+
+    color: white;
+    text-shadow: 6px 6px 0px #555555;
+}
+
+.home-title {
+    position: relative;
+    display: inline-block;
+
+    margin-top: 1.2vh;
+}
+
+.home-title h1 {
+    margin: 0;
+}
+
+#home-page > button:nth-of-type(1) {
+    margin-top: 0.6vh;
+}
+
+#home-page > button:nth-of-type(2) {
+    margin-top: 0.6vh;
+}
+
+.language-button {
+    margin-top: 0.6vh;
+}
+
+.small-buttons {
+    margin-top: 0.6vh;
+}
+
+.minecraft-splash {
+    position: absolute;
+
+    left: calc(50% + 32vw);
+    top: calc(50% + 0.5vh);
+
+    transform: translate(-50%, -50%) rotate(-15deg);
+
+    color: #ffff55;
+    font-family: Minecraft, sans-serif;
+    font-size: 36px;
+
+    text-shadow: 2px 2px 0px #555555;
+
+    white-space: nowrap;
+
+    animation: splash-flash 0.8s infinite alternate;
+}
+
+@keyframes splash-flash {
+    from {
+        opacity: 0.7;
+        transform: translate(-50%, -50%) rotate(-15deg) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) rotate(-15deg) scale(1.05);
+    }
+}
+
+button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 75vh;
+    max-width: 600px;
+    height: 7.5vh;
+    max-height: 60px;
+    margin: 0 auto 0.6vh;
+    padding: 0;
+
+    font-family: Minecraft;
+    font-size: 24px;
+    text-shadow: 3px 3px 0px #555555;
+
+    background-image: url("pngs/button.png");
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    border: none;
+
+    image-rendering: pixelated;
+}
+
+button:hover {
+    background-image: url("pngs/button_highlighted.png");
+}
+
+button:focus,
+button:focus-visible {
+    outline: none;
+    box-shadow: none;
+    border-color: transparent;
+}
+
+button span {
+    position: relative;
+    top: 0.9vh;
+    color: white;
+}
+
+button:hover {
+    background-color: transparent;
+}
+
+p {
+    color: white;
+    margin-top: 70px;
+    font-size: 30px;
+}
+
+.small-buttons {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 1.6vh;
+}
+
+.small-buttons button {
+    width: 37.5vh;
+    max-width: 310px;
+    height: 7.5vh;
+    max-height: 60px;
+    margin: 0;
+
+    background: none;
+
+    border: 3px solid transparent;
+    border-image: url("pngs/button.png") 1 fill stretch;
+
+    image-rendering: pixelated;
+}
+
+.small-buttons button:hover {
+    border-image-source: url("pngs/button_highlighted.png");
+}
+
+.language-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.language-button button {
+    width: 7.5vh;
+    height: 7.5vh;
+    padding: 0;
+    margin: 10px 0;
+
+    background: none;
+
+    border: 3px solid transparent;
+    border-image: url("pngs/button.png") 1 fill stretch;
+
+    image-rendering: pixelated;
+}
+
+.language-button button:hover {
+    border-image-source: url("pngs/button_highlighted.png");
+}
+
+.language-button button:not(.social-button) {
+    width: 6.4vh;
+    height: 6.4vh;
+}
+
+.language-button img {
+    width: 4.69vh;
+    height: 4.69vh;
+
+    object-fit: contain;
+    image-rendering: pixelated;
+}
+
+.info-button img {
+    width: 4.01vh;
+    height: 4.21vh;
+    object-fit: fill;
+    transform: translateY(0.2vh);
+}
+
+.news-button img {
+    width: 4.01vh;
+    height: 4.21vh;
+    object-fit: fill;
+    image-rendering: pixelated;
+    transform: translateY(0.16vh);
+}
+
+.news-button {
+    position: relative;
+}
+
+.news-button .news-badge {
+    position: absolute;
+    top: -0.6vh;
+    right: -0.6vh;
+    width: 1.5vh;
+    height: 1.5vh;
+    object-fit: fill;
+    image-rendering: pixelated;
+    display: none;
+}
+
+.language-button .info-button,
+.language-button .info-button:hover,
+.language-button .news-button,
+.language-button .news-button:hover {
+    width: 6.4vh;
+    height: 6.4vh;
+    background-image: url("pngs/mute_button.png");
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    border: none;
+    border-image: none;
+}
+
+.language-button .info-button:hover,
+.language-button .news-button:hover {
+    background-image: url("pngs/mute_button_highlighted.png");
+}
+
+.social-button img {
+    width: 6.4vh;
+    height: 6.4vh;
+}
+
+.language-button .social-button,
+.language-button .social-button:hover {
+    width: 6.4vh;
+    height: 6.4vh;
+    background: none;
+    border: none;
+    border-image: none;
+}
+
+.social-button:hover img {
+    content: url("pngs/mute_button_highlighted.png");
+}
+
+.warning-button img {
+    width: 6.4vh;
+    height: 6.4vh;
+}
+
+.language-button .warning-button,
+.language-button .warning-button:hover {
+    width: 6.4vh;
+    height: 6.4vh;
+    background: none;
+    border: none;
+    border-image: none;
+}
+
+.warning-button:hover img {
+    content: url("pngs/warning_button_highlighted.png");
+}
+
+/* LANGUAGE MENU */
+
+#language-menu,
+#info-menu,
+#news-menu,
+#report-menu,
+#social-menu,
+#options-page,
+#account-settings-page {
+    display: none;
+
+    position: fixed;
+    top: 0;
+    left: 0;
+
+    width: 100vw;
+    height: 100vh;
+
+    background-color: rgba(0, 0, 0, 0.92);
+
+    z-index: 1000;
+
+    text-align: center;
+
+    /* 内容超长时菜单自身滚动（否则滚轮会穿透到底层页面） */
+    overflow-y: auto;
+
+    padding-top: 120px;
+
+    box-sizing: border-box;
+}
+
+.account-settings-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5vh;
+    width: min(75vh, calc(100vw - 8vw));
+    max-width: 600px;
+    margin: 7vh auto 0;
+}
+
+#account-userid-input {
+    width: 100%;
+    height: 7.5vh;
+    max-height: 60px;
+    padding: 0 1.5vh;
+    box-sizing: border-box;
+    border: 2px solid rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-family: Minecraft, sans-serif;
+    font-size: 20px;
+}
+
+#reset-progress-page {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    align-items: center;
+    justify-content: center;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url("pngs/Background.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.reset-progress-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5vh;
+}
+
+.level-reset-list {
+    position: relative;
+    display: flex;
+    width: min(75vh, 520px);
+    height: min(24vh, 190px);
+    background: #111111;
+    overflow: hidden;
+}
+
+.level-reset-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: none;
+    padding: 1.2vh 4.5vh 1.2vh 1.2vh;
+    box-sizing: border-box;
+}
+
+.level-reset-scroll-area::-webkit-scrollbar {
+    display: none;
+}
+
+.level-reset-item {
+    width: 100%;
+    padding: 1.2vh;
+    margin: 0;
+    box-sizing: border-box;
+    color: #ffffff;
+    font-family: Minecraft, sans-serif;
+    font-size: 2.75vh;
+    line-height: 1;
+    text-align: center;
+    cursor: pointer;
+}
+
+.level-reset-scroll-track {
+    position: absolute;
+    top: 1.2vh;
+    right: 1.2vh;
+    bottom: 1.2vh;
+    width: 2vh;
+    display: flex;
+    justify-content: center;
+}
+
+.level-reset-scroller {
+    position: absolute;
+    top: 0;
+    width: auto;
+    height: 4.5vh;
+    image-rendering: pixelated;
+    cursor: grab;
+}
+
+.login-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.login-modal-box {
+    width: min(86vw, 340px);
+    background: #ffffff;
+    border-radius: 0;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.18);
+    padding: 26px 22px 18px;
+    box-sizing: border-box;
+    text-align: left;
+}
+
+.login-title {
+    color: #111111;
+    font-family: Minecraft, sans-serif;
+    font-size: 30px;
+    margin-bottom: 18px;
+    text-align: center;
+    position: relative;
+}
+
+.login-field-row {
+    margin-bottom: 12px;
+}
+
+#login-email,
+#login-password,
+#login-userid {
+    width: 100%;
+    height: 42px;
+    border: 2px solid #1a1a1a;
+    background: #ffffff;
+    color: #111111;
+    font-family: Minecraft, sans-serif;
+    font-size: 16px;
+    padding: 1.1vh 12px 0;
+    box-sizing: border-box;
+    outline: none;
+    position: relative;
+    line-height: 1;
+    border-radius: 0;
+    transform: translateY(1.0vh);
+}
+
+#login-email:focus,
+#login-password:focus,
+#login-userid:focus {
+    border-color: #2a7ae2;
+    box-shadow: 0 0 0 3px rgba(42, 122, 226, 0.12);
+}
+
+#login-submit-btn {
+    width: 100%;
+    height: 42px;
+    margin-top: 8px;
+    border: 2px solid #111111;
+    background: #000000;
+    color: #ffffff;
+    font-family: Minecraft, sans-serif;
+    font-size: 16px;
+    cursor: pointer;
+    position: relative;
+    top: 2.4vh;
+    border-radius: 0;
+}
+
+#login-submit-btn span {
+    position: relative;
+    display: inline-block;
+    transform: translateY(-0.4vh);
+}
+
+.login-signup-line {
+    margin-top: 18px;
+    text-align: center;
+    position: relative;
+    top: 0.6vh;
+}
+
+.text-link-btn {
+    border: none;
+    background: transparent;
+    color: #3e78d8;
+    font-family: Minecraft, sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: none;
+    display: inline-block;
+    user-select: none;
+    position: relative;
+    top: 0.3vh;
+}
+
+.language-title,
+.info-title {
+    color: white;
+    font-family: Minecraft, sans-serif;
+    font-size: 36px;
+
+    margin-bottom: 18px;
+}
+
+.news-title {
+    margin-top: 3vh;
+    color: white;
+    font-family: Minecraft, sans-serif;
+    font-size: clamp(42px, 5vw, 72px);
+}
+
+#report-menu {
+    padding-top: 0;
+}
+
+.report-title {
+    margin-top: 5vh;
+    color: white;
+    font-family: MinecraftChinese, sans-serif;
+    font-size: clamp(42px, 5vw, 72px);
+}
+
+.report-panel {
+    display: flex;
+    flex-direction: column;
+    width: min(75vh, calc(100vw - 8vw));
+    max-width: 600px;
+    position: fixed;
+    left: 50%;
+    bottom: 5vh;
+    margin: 0;
+    transform: translateX(-50%);
+    gap: 2vh;
+}
+
+.report-list {
+    width: min(75vh, calc(100vw - 8vw));
+    max-width: 600px;
+    height: 45vh;
+    margin: 5vh auto 0;
+    overflow-y: auto;
+    padding-right: 1vh;
+    padding-bottom: 30vh;
+    box-sizing: border-box;
+}
+
+.report-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6vh;
+    margin-bottom: 1.5vh;
+    padding: 1.2vh 1.5vh;
+    border: 2px solid rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.08);
+    box-sizing: border-box;
+    color: white;
+    text-align: left;
+}
+
+.report-item .comment-author {
+    font-family: Minecraft, sans-serif;
+}
+
+.report-item .comment-time {
+    font-family: Arial, sans-serif;
+}
+
+.report-text {
+    color: white;
+    font-family: Arial, sans-serif;
+    font-size: clamp(16px, 2vh, 22px);
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+#report-input {
+    width: 100%;
+    min-height: 16vh;
+    padding: 1.5vh;
+    box-sizing: border-box;
+    border: 2px solid rgba(255, 255, 255, 0.7);
+    border-radius: 0;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-family: Arial, sans-serif;
+    font-size: clamp(16px, 2vh, 22px);
+    line-height: 1.4;
+    resize: vertical;
+}
+
+#report-input::placeholder {
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.report-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1.5vh;
+    width: 100%;
+}
+
+.report-actions button {
+    flex: 1;
+    width: auto;
+    margin: 0;
+}
+
+#news-menu {
+    padding-top: 0;
+}
+
+.news-timeline {
+    position: relative;
+    width: 100%;
+    margin-top: 7vh;
+}
+
+.news-timeline::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 25vw;
+    width: 2px;
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.news-entry {
+    position: relative;
+    min-height: 10vh;
+    color: white;
+    font-family: Minecraft, sans-serif;
+    font-size: clamp(20px, 2.8vh, 30px);
+    line-height: 1.5;
+    margin-bottom: 1.5em;
+}
+
+.news-date {
+    position: absolute;
+    top: 0;
+    left: 4vw;
+    width: 19vw;
+    text-align: right;
+}
+
+.news-update {
+    margin-left: 28vw;
+    padding-right: 4vw;
+    text-align: left;
+}
+
+.comments-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    width: min(70vw, 800px);
+    height: calc(100vh - 220px);
+    margin: 0 auto;
+    padding: 0 1vw;
+    box-sizing: border-box;
+}
+
+.comments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.comment-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 255, 255, 0.55);
+    border-radius: 0;
+    padding: 12px 14px;
+    text-align: left;
+    box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.35);
+}
+
+.comment-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    width: 100%;
+    gap: 10px;
+}
+
+.comment-author {
+    color: #dfeaff;
+    font-family: Minecraft, sans-serif;
+    font-size: 18px;
+    text-shadow: 2px 2px 0px #555555;
+}
+
+.comment-time {
+    color: #dcdcdc;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    margin-left: auto;
+    white-space: nowrap;
+    position: relative;
+    top: -0.7vh;
+}
+
+.comment-text {
+    color: white;
+    font-family: Arial, sans-serif;
+    font-size: 18px;
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+.replyable-item {
+    cursor: pointer;
+}
+
+.reply-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    margin-top: 8px;
+    padding-left: 14px;
+    box-sizing: border-box;
+}
+
+.reply-item {
+    width: 100%;
+    padding: 2px 0;
+    box-sizing: border-box;
+    text-align: left;
+}
+
+.reply-item .comment-author {
+    font-size: 14px;
+}
+
+.reply-item .comment-time {
+    font-size: 10px;
+}
+
+.reply-text {
+    color: white;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.reply-composer {
+    display: flex;
+    width: 100%;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.reply-composer input {
+    flex: 1;
+    min-width: 0;
+    height: 32px;
+    padding: 0 8px;
+    box-sizing: border-box;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+}
+
+.language-button .reply-composer button {
+    width: 78px;
+    height: 28px;
+    margin: 0;
+    color: white;
+    font-size: 13px;
+    text-shadow: 1px 1px 0 #555555;
+}
+
+.reply-composer button span {
+    display: inline-block;
+    top: calc(0.9vh + 2px);
+    transform: none;
+}
+
+.comment-input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: auto;
+    margin-bottom: 0;
+    padding-bottom: 0;
+    transform: translateY(-0.1vh);
+}
+
+#comment-input {
+    flex: 1;
+    height: 42px;
+    border: 2px solid rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+    font-family: Arial, sans-serif;
+    font-size: 18px;
+    padding: 0 12px;
+    box-sizing: border-box;
+    transform: translateY(-0.1vh);
+}
+
+#send-comment-btn {
+    width: 110px;
+    height: 42px;
+    margin: 0;
+    position: relative;
+    top: -0.15vh;
+    font-family: Minecraft, sans-serif;
+    font-size: 18px;
+    color: white;
+    text-shadow: 3px 3px 0px #555555;
+    cursor: pointer;
+    background: none;
+    border: 3px solid transparent;
+    border-image: url("pngs/button.png") 1 fill stretch;
+    image-rendering: pixelated;
+}
+
+#send-comment-btn span {
+    position: relative;
+    top: 0.6vh;
+}
+
+#id-prompt-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    z-index: 2000;
+}
+
+.id-prompt-box {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(80vw, 420px);
+    padding: 26px 24px 22px;
+    background: rgba(0, 0, 0, 0.9);
+    border: 3px solid rgba(255, 255, 255, 0.5);
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.id-prompt-title {
+    color: white;
+    font-family: Minecraft, sans-serif;
+    font-size: 30px;
+    margin-bottom: 20px;
+    text-shadow: 3px 3px 0px #555555;
+}
+
+#id-input {
+    width: 100%;
+    height: 42px;
+    margin-bottom: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+    font-family: Arial, sans-serif;
+    font-size: 18px;
+    padding: 0 12px;
+    box-sizing: border-box;
+}
+
+#id-submit-btn,
+#id-cancel-btn {
+    width: 120px;
+    height: 42px;
+    margin: 0;
+    font-family: Minecraft, sans-serif;
+    font-size: 18px;
+    color: white;
+    text-shadow: 3px 3px 0px #555555;
+    cursor: pointer;
+    background: none;
+    border: 3px solid transparent;
+    border-image: url("pngs/button.png") 1 fill stretch;
+    image-rendering: pixelated;
+}
+
+#id-submit-btn span,
+#id-cancel-btn span {
+    position: relative;
+    top: 0.5vh;
+}
+
+#id-submit-btn:hover,
+#id-cancel-btn:hover,
+#send-comment-btn:hover {
+    border-image-source: url("pngs/button_highlighted.png");
+}
+
+.id-prompt-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.id-prompt-actions {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 1.2vh;
+    width: 100%;
+}
+
+.id-prompt-box button {
+    display: inline-block;
+}
+
+.id-prompt-box .id-prompt-title + input + .id-prompt-actions {
+    margin-top: 0.9vh;
+}
+
+.secondary-btn {
+    opacity: 0.9;
+}
+
+.info-contribution {
+    color: white;
+    font-family: Minecraft, sans-serif;
+    font-size: 24px;
+    line-height: 1.8;
+    margin: 0 auto 12px;
+    text-shadow: 3px 3px 0px #555555;
+}
+
+.info-spacer {
+    height: 6vh;
+}
+
+.info-body {
+    color: white;
+    font-family: Minecraft, sans-serif;
+    font-size: 22px;
+    line-height: 1.8;
+    margin: 1vh auto 0;
+    text-shadow: 3px 3px 0px #555555;
+    max-width: 90vw;
+}
+
+.language-option {
+    display: block;
+
+    color: white;
+    background: none;
+    border: none;
+    outline: none;
+    box-shadow: none;
+
+    font-family: Minecraft, sans-serif;
+    font-size: 28px;
+
+    margin: 30px auto;
+
+    cursor: pointer;
+
+    text-shadow: 3px 3px 0px #555555;
+}
+
+.language-option:hover {
+    color: #cccccc;
+}
+
+/* CHINESE FONT */
+
+body.chinese {
+    font-family: MinecraftChinese, sans-serif;
+}
+
+body.chinese button {
+    font-family: MinecraftChinese, sans-serif;
+}
+
+body.chinese button span {
+    font-family: MinecraftChinese, sans-serif;
+    top: 0;
+}
+
+body.chinese .minecraft-splash {
+    display: none;
+}
+
+/* LANGUAGE MENU FONT */
+
+#language-menu .language-title {
+    font-family: Minecraft !important;
+    font-size: 36px !important;
+    line-height: 1;
+}
+
+#language-menu .english-option {
+    font-family: Minecraft !important;
+    font-size: 28px !important;
+    line-height: 1;
+}
+
+#language-menu .chinese-option {
+    font-family: MinecraftChinese !important;
+    font-size: 28px !important;
+    line-height: 1;
+}
+
+/* PROJECT CREDIT */
+
+.project-credit {
+    position: absolute;
+    left: 50%;
+    bottom: -18px;
+    transform: translateX(-50%);
+
+    width: 100%;
+    font-family: Minecraft !important;
+    font-size: 30px !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+    padding-bottom: 18px;
+    box-sizing: border-box;
+}
+
+#home-page > button:first-of-type {
+    margin-top: 21vh;
+}
+
+body.chinese #home-page > button:first-of-type {
+    margin-top: 28.63vh;
+}
+
+body.chinese .home-title {
+    margin-top: 5.93vh;
+}
+
+/* =========================
+   WIKI PAGE
+========================= */
+
+.wiki-page {
+    padding-top: 0;
+    text-align: left;
+
+    background: white;
+    background-image: none;
+
+    color: black;
+}
+
+
+/* WIKI TITLE */
+
+.wiki-header {
+    padding: 7.5vh 0 0;
+}
+
+.wiki-header-top {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    min-height: 6.5vh;
+    z-index: 1000;
+
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(2px);
+    padding: 1.2vh 1.3vw 0.8vh;
+    box-sizing: border-box;
+}
+
+.wiki-back-link {
+    position: fixed;
+    top: 2vh;
+    left: 2vw;
+    z-index: 20;
+    display: inline-block;
+    color: #2f6fe5;
+    font-family: Minecraft, sans-serif;
+    font-size: 15px;
+    text-decoration: none;
+    text-shadow: none;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+.wiki-back-link:hover {
+    color: #1d4fb4;
+}
+
+.wiki-header h1 {
+    margin: 0;
+    padding-top: 4.8vh;
+    padding-left: 1.3vw;
+
+    color: black;
+    font-family: Minecraft, sans-serif;
+    font-size: 56px;
+
+    text-shadow: none;
+}
+
+.level-page {
+    min-height: 100vh;
+    margin: 0;
+    background: #ffffff;
+    color: #111111;
+    text-align: center;
+    font-family: Minecraft, sans-serif;
+}
+
+.level-page-inner {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 2vh;
+    padding: 12vh 4vw 6vh;
+    box-sizing: border-box;
+}
+
+/* Level 2: gray background */
+.level2-page {
+    background: #c0c0c0;
+}
+
+.number-line-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+    padding: 2vh calc(6vw + 11.3vh) 2vh calc(4vw + 11.3vh);
+    box-sizing: border-box;
+}
+
+.number-line {
+    position: relative;
+    width: 420vw;
+    min-width: 2400px;
+    /* Tall enough to fit 10 imaginary units above AND below the origin
+       at any viewport width (origin stays at 50%). */
+    height: calc(var(--imaginary-unit, 10.5vw) * 24 + 12vh);
+    min-height: 1500px;
+}
+
+.number-scale {
+    position: absolute;
+    inset: 0;
+}
+
+.axis-line {
+    position: absolute;
+    left: -5vh;
+    right: -5vh;
+    top: 50%;
+    height: 3px;
+    background: #111111;
+    transform: translateY(-50%);
+}
+
+.axis-arrow {
+    position: absolute;
+    top: 50%;
+    width: 0;
+    height: 0;
+    border-top: 1.25vh solid transparent;
+    border-bottom: 1.25vh solid transparent;
+    transform: translateY(-50%);
+    z-index: 2;
+}
+
+.axis-arrow.left {
+    left: -9.3vh;
+    border-right: 4.3vh solid #111111;
+}
+
+.axis-arrow.right {
+    right: -9.3vh;
+    border-left: 4.3vh solid #111111;
+}
+
+.axis-tick {
+    position: absolute;
+    top: 50%;
+    width: 2px;
+    background: #111111;
+    transform: translate(-50%, -50%);
+    height: 3vh;
+}
+
+.axis-label {
+    position: absolute;
+    top: calc(50% + 3.5vh);
+    color: #111111;
+    font-family: Minecraft, sans-serif;
+    font-size: clamp(14px, 1.6vw, 22px);
+    line-height: 1;
+    transform: translateX(-50%);
+}
+
+.imaginary-axis {
+    position: absolute;
+    left: 50%;
+    bottom: 50%;
+    width: 0;
+    height: calc(var(--imaginary-unit) * 10 + 5vh);
+    transform: translateX(-50%);
+    z-index: 4;
+    visibility: hidden;
+}
+
+.imaginary-axis.imaginary-axis-visible {
+    visibility: visible;
+}
+
+.imaginary-axis-line {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 3px;
+    height: 100%;
+    background: #111111;
+    transform: translateX(-50%);
+}
+
+.imaginary-axis::before,
+.imaginary-axis::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-left: 1.25vh solid transparent;
+    border-right: 1.25vh solid transparent;
+    transform: translateX(-50%);
+}
+
+.imaginary-axis::before {
+    top: -3.5vh;
+    border-bottom: 4.3vh solid #111111;
+}
+
+.imaginary-axis::after {
+    display: none;
+}
+
+.imaginary-scale {
+    position: absolute;
+    inset: 0;
+}
+
+.imaginary-tick {
+    position: absolute;
+    left: 50%;
+    width: 2.25vh;
+    height: 2px;
+    background: #111111;
+    transform: translateX(-50%);
+}
+
+.imaginary-label {
+    position: absolute;
+    left: calc(50% + 1.5vh);
+    transform: translateY(calc(-50% + 2.7vh));
+    color: #111111;
+    font-family: Minecraft, sans-serif;
+    font-size: clamp(14px, 1.6vw, 22px);
+    line-height: 1;
+}
+
+/* Level 2: negative imaginary axis (mirrored copy of the positive one,
+   independently toggleable via .imaginary-axis-visible) */
+.imaginary-axis-neg {
+    top: 50%;
+    bottom: auto;
+}
+
+.imaginary-axis-neg::before {
+    display: none;
+}
+
+.imaginary-axis-neg::after {
+    display: block;
+    bottom: -3.5vh;
+    border-top: 4.3vh solid #111111;
+}
+
+.imaginary-axis-neg .imaginary-label {
+    transform: translateY(calc(50% - 2.7vh + 1.8vh));
+}
+
+/* Level 2: potion at 10 + 5i, hotbar, fly-to-slot animation */
+.potion-sprite {
+    position: absolute;
+    left: calc(50% + var(--imaginary-unit) * 10);
+    bottom: calc(50% + var(--imaginary-unit) * 5);
+    transform: translateX(-50%);
+    height: 7vh;
+    width: auto;
+    z-index: 5;
+}
+
+.potion-sprite.picked {
+    visibility: hidden;
+}
+
+@keyframes potion-glow {
+    0%, 100% {
+        filter: drop-shadow(0 0 0.8vh rgba(255, 200, 60, 0.85));
+        transform: translateX(-50%) scale(1);
+    }
+    50% {
+        filter: drop-shadow(0 0 2.2vh rgba(255, 220, 90, 1));
+        transform: translateX(-50%) scale(1.15);
+    }
+}
+
+.potion-sprite:not(.picked) {
+    animation: potion-glow 1.2s ease-in-out infinite;
+}
+
+.hotbar {
+    position: fixed;
+    left: 50%;
+    bottom: 1.5vh;
+    /* 槽位贴图左侧有 7/24 的透明列，右移半个透明宽让可见内容回到屏幕中心 */
+    transform: translateX(calc(-50% + 9vh * 7 / 48));
+    display: flex;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+    z-index: 40;
+}
+
+.hotbar.show {
+    opacity: 1;
+}
+
+/* Level 3：槽位需要可点击选中（level2 的物品栏只是展示，保持不可点） */
+.hotbar.clickable .hotbar-slot {
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+.hotbar-slot {
+    position: relative;
+    height: 9vh;
+}
+
+/* 贴图左侧有 7/24 透明列（9vh × 7/24 ≈ 2.63vh），精确负边距让格子边框相接 */
+.hotbar .hotbar-slot + .hotbar-slot {
+    margin-left: calc(-9vh * 7 / 24);
+}
+
+.hotbar-slot img {
+    display: block;
+    height: 100%;
+    width: auto;
+    image-rendering: pixelated;
+}
+
+/* 选中框：叠加在槽位上的白色粗边框（中间透明），MC 原版式 1:1 覆盖
+   selection 内框（16x16）对齐槽位内部区左上角：
+   left = 9vh*(9.5-4)/24（内框左缘重合），top = 9vh*0.5/24（内框顶缘重合） */
+.hotbar-slot .slot-selection {
+    position: absolute;
+    left: calc(9vh * 5.5 / 24);
+    top: calc(9vh * 0.5 / 24);
+    width: 9vh;
+    height: calc(9vh * 23 / 24);
+    display: none;
+    z-index: 3;
+    pointer-events: none;
+}
+
+.hotbar-slot.selected .slot-selection {
+    display: block;
+}
+
+/* level3：成就弹窗左部的物品图标（拾取黑曜石时） */
+.advancement-toast .advancement-toast-item-icon {
+    display: none;
+    position: absolute;
+    left: 3vh;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 4.6vh;
+    width: auto;
+    image-rendering: pixelated;
+}
+
+.advancement-toast.with-icon .advancement-toast-item-icon {
+    display: block;
+}
+
+/* 图标占位：文字整体右移避开图标 */
+.advancement-toast.with-icon .advancement-toast-text {
+    padding-left: 9.5vh;
+}
+
+.hotbar-slot .potion-in-slot,
+.hotbar-slot .snow-in-slot {
+    position: absolute;
+    left: calc(50% + 9vh * 7 / 48);
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: auto;
+    visibility: hidden;
+}
+
+.hotbar-slot .potion-in-slot {
+    height: 68%;
+}
+
+/* Snowflake icon: half the potion-slot baseline */
+.hotbar-slot .snow-in-slot {
+    height: 68%;
+}
+
+.hotbar-slot .potion-in-slot.show,
+.hotbar-slot .snow-in-slot.show {
+    visibility: visible;
+}
+
+/* Only the potion in the hotbar is clickable for drinking */
+.hotbar-slot .potion-in-slot {
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+/* Spell effect particles falling over Steve (after drinking) */
+.spell-particle {
+    position: absolute;
+    width: 1.15vh;
+    height: 1.15vh;
+    image-rendering: pixelated;
+    pointer-events: none;
+    z-index: 7;
+    opacity: 1;
+    transition: transform 2.6s linear, opacity 2.6s ease-in, left 2.6s ease-in-out;
+}
+
+/* Conjugate Steve: twin mirrored across the real axis (z*) */
+.steve-conjugate-img {
+    display: none;
+    opacity: 0.7;
+}
+
+.steve-conjugate-img.revealed {
+    display: block;
+}
+
+/* 镜像奔跑图：只有 revealed（已激活）+ show（奔跑帧）同时存在才显示，
+   否则站立状态会误显示奔跑图 */
+.steve-conjugate-img.steve-run-img.revealed {
+    display: none;
+}
+
+.steve-conjugate-img.steve-run-img.revealed.show {
+    display: block;
+}
+
+/* Second line of the coord label: z* = a - bi */
+#coord-conj {
+    margin-top: 0.6vh;
+}
+
+/* The snowflake in the hotbar can be dragged */
+.hotbar-slot .snow-in-slot {
+    pointer-events: auto;
+    cursor: grab;
+}
+
+/* Ghost image following the pointer while dragging the snowflake */
+.snow-drag-ghost {
+    position: fixed;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 70;
+    image-rendering: pixelated;
+}
+
+/* 拖拽槽位物品时的通用幽灵图（level3 pickaxe / level4 pumpkin pie） */
+.item-drag-ghost {
+    position: fixed;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 70;
+    image-rendering: pixelated;
+}
+
+.potion-fly {
+    position: fixed;
+    z-index: 60;
+    pointer-events: none;
+    transition: left 0.8s ease-in-out, top 0.8s ease-in-out, height 0.8s ease-in-out;
+}
+
+.steve-sprite {
+    position: absolute;
+    left: 50%;
+    bottom: 50%;
+    height: 9vh;
+    width: auto;
+    transform: translate(-50%, 0);
+    transform-origin: bottom center;
+    z-index: 6;
+    image-rendering: pixelated;
+    pointer-events: none;
+}
+
+.steve-coord-label {
+    position: fixed;
+    top: 7.5vh;
+    left: 4vw;
+    z-index: 20;
+    color: #111111;
+    font-family: Minecraft, sans-serif;
+    font-size: clamp(32px, 4vh, 48px);
+    line-height: 1;
+    white-space: nowrap;
+    transform: none !important;
+    pointer-events: none;
+}
+
+.nether-portal-sprite {
+    position: absolute;
+    left: 50%;
+    bottom: 50%;
+    height: 22.5vh;
+    width: auto;
+    transform: translate(-50%, 0);
+    transform-origin: bottom center;
+    z-index: 7;
+    image-rendering: pixelated;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease-in;
+}
+
+.nether-portal-sprite.revealed {
+    opacity: 1;
+}
+
+.steve-sprite.steve-sneaking {
+    height: 6.5vh;
+}
+
+.steve-run-img {
+    display: none;
+    height: 8.6vh;
+    object-position: top center;
+}
+
+.steve-run-img.show {
+    display: block;
+}
+
+.steve-sprite.steve-hidden {
+    visibility: hidden;
+}
+
+.win-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4vh;
+    background: rgba(0, 0, 0, 0.95);
+}
+
+.win-overlay.show {
+    display: flex;
+}
+
+.win-text {
+    color: #ffffff;
+    font-family: Minecraft, sans-serif;
+    font-size: clamp(36px, 5vw, 72px);
+    text-shadow: 4px 4px 0 #555555;
+}
+
+.advancement-toast {
+    position: fixed;
+    top: 4vh;
+    right: -60vh;
+    width: 52vh;
+    z-index: 50;
+    transition: right 0.6s ease-out;
+    pointer-events: none;
+}
+
+.advancement-toast.show {
+    right: 2.5vh;
+}
+
+.advancement-toast-bg {
+    display: block;
+    width: 100%;
+    height: auto;
+    image-rendering: pixelated;
+}
+
+.advancement-toast-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    text-align: left;
+    gap: 0.75vh;
+    padding: 2.1vh 2.5vh 0 3vh;
+    box-sizing: border-box;
+}
+
+.advancement-line-title {
+    color: #FFFF55;
+    font-family: Minecraft, sans-serif;
+    font-size: 2.75vh;
+    line-height: 1;
+    white-space: nowrap;
+    position: relative;
+    top: -0.5vh;
+}
+
+.advancement-line-body {
+    color: #FFFFFF;
+    font-family: Minecraft, sans-serif;
+    font-size: 2.75vh;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.tutorial-toast {
+    position: fixed;
+    top: 4vh;
+    right: -60vh;
+    width: 52vh;
+    z-index: 50;
+    transition: right 0.6s ease-out;
+    pointer-events: none;
+}
+
+.tutorial-toast.show {
+    right: 2.5vh;
+}
+
+.tutorial-toast-bg {
+    display: block;
+    width: 100%;
+    height: auto;
+    image-rendering: pixelated;
+}
+
+.tutorial-toast-icon {
+    position: absolute;
+    left: 1.5vh;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 7vh;
+    width: auto;
+    image-rendering: pixelated;
+}
+
+.tutorial-toast-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    text-align: left;
+    gap: 0.75vh;
+    padding: 0 2.5vh 0 9.5vh;
+    box-sizing: border-box;
+    top: 1.5vh;
+}
+
+.tutorial-line-title {
+    color: #AA00AA;
+    font-family: Minecraft, sans-serif;
+    font-size: 2.75vh;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.tutorial-line-body {
+    color: #111111;
+    font-family: Minecraft, sans-serif;
+    font-size: 2.75vh;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+/* level2 的教程弹窗正文小一号（不影响 level1），紫色标题行距加大 */
+.level2-page .tutorial-line-title,
+.level2-page .tutorial-line-body {
+    font-size: 2.3vh;
+}
+
+.level2-page .tutorial-line-title {
+    line-height: 1.45;
+}
+
+/* level2 的教程弹窗整体拉高（不影响 level1，原比例高度约 10.4vh） */
+.level2-page .tutorial-toast {
+    height: 14vh;
+}
+
+.level2-page .tutorial-toast-bg {
+    height: 100%;
+}
+
+.system-toast {
+    position: fixed;
+    top: 4vh;
+    right: 2.5vh;
+    width: 46vh;
+    max-width: calc(100vw - 5vh);
+    z-index: 50;
+    transform: translateX(calc(100% + 3vh));
+    transition: transform 0.6s ease-out;
+    pointer-events: none;
+}
+
+.system-toast.show {
+    transform: translateX(0);
+}
+
+.system-toast-bg {
+    display: block;
+    width: 100%;
+    height: 14vh;
+    image-rendering: pixelated;
+}
+
+.system-toast-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    text-align: left;
+    gap: 0.5vh;
+    padding: 0 1.5vh 0 5.5vh;
+    box-sizing: border-box;
+}
+
+.system-toast-line {
+    color: #FFFF55;
+    font-family: Minecraft, sans-serif;
+    font-size: 2.6vh;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.system-toast-line.white-line {
+    color: white;
+}
+
+/* Tips toast（仅 level2 的 Hint 弹窗）: 字号比通用 system 弹窗大一号，文字整体下移（含固定预览弹窗） */
+.level2-page #tips-toast .system-toast-line,
+.level2-page #tips-toast-preview .system-toast-line {
+    font-size: 2.8vh;
+}
+
+/* 白色正文比黄色标题小一号 */
+.level2-page #tips-toast .system-toast-line.white-line,
+.level2-page #tips-toast-preview .system-toast-line.white-line {
+    font-size: 2.4vh;
+}
+
+.level2-page #tips-toast .system-toast-text,
+.level2-page #tips-toast-preview .system-toast-text {
+    transform: translateY(0.8vh);
+    /* 行距比通用弹窗大 0.2vh */
+    gap: 1.15vh;
+}
+
+/* 弹窗里的星号用 Arial 字体显示，并抬高到文字上半部（Arial 的 * 默认贴基线） */
+.level2-page #tips-toast .font-star,
+.level2-page #tips-toast-preview .font-star {
+    font-family: Arial, sans-serif;
+    display: inline-block;
+    transform: translateY(-1.1vh);
+}
+
+/* level3 的开场 Tips 弹窗: 黄色标题比通用 system 弹窗大 2 号，文字整体下移 0.3vh */
+.level3-page #tips-toast .system-toast-line {
+    font-size: 3vh;
+}
+
+/* 白色正文保持默认字号 */
+.level3-page #tips-toast .system-toast-line.white-line {
+    font-size: 2.6vh;
+}
+
+.level3-page #tips-toast .system-toast-text {
+    transform: translateY(0.5vh);
+}
+
+/* Long-text variant: allows wrapping, taller bg */
+.system-toast.long-text {
+    width: 62vh;
+}
+
+.system-toast.long-text .system-toast-bg {
+    height: 26vh;
+}
+
+.system-toast.long-text .system-toast-line {
+    white-space: normal;
+    font-size: 2.6vh;
+    line-height: 1.6;
+}
+
+.system-toast.long-text .system-toast-line.white-line {
+    color: white;
+}
+
+.system-toast.long-text .system-toast-text {
+    padding: 0.4vh 2.5vh 0 6.5vh;
+}
+
+
+/* THREE COLUMN LAYOUT */
+
+.wiki-layout {
+    display: grid;
+
+    grid-template-columns: 260px 1fr 260px;
+
+    min-height: calc(100vh - 120px);
+}
+
+
+/* LEFT SIDEBAR */
+
+.wiki-sidebar {
+    grid-column: 1;
+
+    padding: 3vh;
+
+    border-right: 1px solid #cccccc;
+}
+
+.wiki-sidebar h2 {
+    margin-top: 0;
+    margin-bottom: 3vh;
+
+    color: black;
+    font-family: Minecraft, sans-serif;
+    font-size: 24px;
+
+    text-shadow: none;
+}
+
+.wiki-sidebar a {
+    display: block;
+
+    margin-bottom: 0;
+
+    color: black;
+    font-family: Minecraft, sans-serif;
+    font-size: 16px;
+
+    text-decoration: none;
+
+    text-shadow: none;
+}
+
+.wiki-sidebar a:hover {
+    color: #666666;
+}
+
+
+/* CENTER */
+
+.wiki-main {
+    grid-column: 2;
+
+    padding: 4vh 6vw;
+}
+
+/* Cookie 同意弹窗（底部，MC 风格） */
+.cookie-consent {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: translateY(180%);
+    z-index: 900;
+
+    display: flex;
+    align-items: center;
+    gap: 2vw;
+
+    width: 100%;
+    padding: 1.6vh 3vw;
+    box-sizing: border-box;
+
+    background: rgba(17, 17, 17, 0.95);
+    border-top: 3px solid #ffffff;
+
+    text-align: left;
+
+    transition: transform 0.5s ease-out;
+}
+
+.cookie-consent.show {
+    transform: translateY(0);
+}
+
+.cookie-consent-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.cookie-consent-title {
+    margin-bottom: 0.8vh;
+
+    color: #ffff55;
+    font-family: Minecraft, sans-serif;
+    font-size: 2.6vh;
+
+    text-shadow: 0.2vh 0.2vh 0 #555555;
+}
+
+.cookie-consent-desc {
+    color: white;
+    font-family: Minecraft, sans-serif;
+    font-size: 1.9vh;
+    line-height: 1.35;
+
+    text-shadow: 0.15vh 0.15vh 0 #555555;
+}
+
+.cookie-consent-buttons {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    gap: 1.6vh;
+    flex-shrink: 0;
+}
+
+.cookie-consent-buttons button {
+    width: 30vh;
+    height: 7.5vh;
+    max-height: 60px;
+    margin: 0;
+
+    font-size: 2.4vh;
+}
+
+.cookie-consent-buttons button span {
+    top: 0.9vh;
+}
+
+/* 锚点定位时给固定顶栏留出空间，避免标题被遮住 */
+.wiki-main h2,
+.wiki-main h3 {
+    scroll-margin-top: 7vh;
+}
+
+.wiki-main h4 {
+    scroll-margin-top: 7vh;
+}
+
+.wiki-main h2 {
+    margin-top: 0;
+
+    color: black;
+    font-family: Minecraft, sans-serif;
+    font-size: 32px;
+
+    text-shadow: none;
+}
+
+.wiki-main p {
+    margin: 1.6vh 0 2.2vh;
+
+    color: black;
+    font-family: Arial, sans-serif;
+    font-size: 20px;
+    line-height: 1.5;
+
+    text-shadow: none;
+}
+
+.wiki-main p strong {
+    color: #222222;
+    font-weight: bold;
+}
+
+.wiki-main mjx-container,
+.wiki-main .MathJax,
+.wiki-main .MathJax_Display {
+    font-size: 1.4em !important;
+    line-height: 1.5;
+}
+
+.wiki-main h2 + h3 + p + mjx-container,
+.wiki-main h2 + h3 + p + .MathJax,
+.wiki-main h2 + h3 + p + .MathJax_Display,
+.wiki-main h3[id="introduction"] ~ p mjx-container,
+.wiki-main h3[id="introduction"] ~ p .MathJax,
+.wiki-main h3[id="introduction"] ~ p .MathJax_Display,
+.wiki-main h3[id="imaginary-unit"] ~ p mjx-container,
+.wiki-main h3[id="imaginary-unit"] ~ p .MathJax,
+.wiki-main h3[id="imaginary-unit"] ~ p .MathJax_Display,
+.wiki-main h3[id="complex-plane"] ~ p mjx-container,
+.wiki-main h3[id="complex-plane"] ~ p .MathJax,
+.wiki-main h3[id="complex-plane"] ~ p .MathJax_Display {
+    font-size: 1.2em !important;
+    line-height: 1.5;
+}
+
+.wiki-main .equation-block {
+    margin: 0.8vh 0 1.6vh;
+}
+
+.wiki-main .equation-block mjx-container,
+.wiki-main .equation-block .MathJax,
+.wiki-main .equation-block .MathJax_Display {
+    font-size: 1.4em !important;
+    line-height: 1.5;
+}
+
+.wiki-main .de-moivre-block mjx-container,
+.wiki-main .de-moivre-block .MathJax,
+.wiki-main .de-moivre-block .MathJax_Display {
+    font-size: 1.4em !important;
+    line-height: 1.5;
+}
+
+.wiki-main .trig-form-block mjx-container,
+.wiki-main .trig-form-block .MathJax,
+.wiki-main .trig-form-block .MathJax_Display {
+    font-size: 1.4em !important;
+    line-height: 1.5;
+}
+
+.wiki-main .polar-block mjx-container,
+.wiki-main .polar-block .MathJax,
+.wiki-main .polar-block .MathJax_Display {
+    font-size: 1.4em !important;
+    line-height: 1.5;
+}
+
+/* RIGHT SIDE */
+
+.wiki-right {
+    grid-column: 3;
+
+    border-left: 1px solid #cccccc;
+}
+
+/* 右栏注释块（与正文小节对应的例子） */
+.wiki-note {
+    padding: 2vh 1.2vw;
+    text-align: left;
+    font-size: 0.9em;
+    line-height: 1.9;
+}
+
+/* Example 小标题：比三级标题的蓝青色浅一号 */
+.wiki-note-title {
+    margin-bottom: 0.8vh;
+
+    color: #82a9c5;
+    font-family: Minecraft, sans-serif;
+    font-size: 17px;
+
+    text-shadow: none;
+}
+
+.wiki-note p {
+    margin: 0 0 1.2vh;
+
+    color: black;
+    font-family: Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.9;
+
+    text-shadow: none;
+}
+
+/* ============ LEVEL 3 ============ */
+
+/* 白色背景 */
+.level3-page {
+    background: #ffffff;
+}
+
+/* 虚轴范围扩大到 ±20i，数轴高度相应加倍 */
+.level3-page .number-line {
+    height: calc(var(--imaginary-unit, 10.5vw) * 40 + 12vh);
+    min-height: 2560px;
+}
+
+/* 虚轴轴线同样延长到 ±20i（通用样式只画了 ±10） */
+.level3-page .imaginary-axis {
+    height: calc(var(--imaginary-unit) * 20 + 5vh);
+}
+
+/* 世界中的宝藏（挖到才显示） */
+.treasure-sprite {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    height: 5.5vh;
+    width: auto;
+    z-index: 5;
+    visibility: hidden;
+    image-rendering: pixelated;
+    pointer-events: none;
+}
+
+.treasure-sprite.revealed {
+    visibility: visible;
+}
+
+.treasure-sprite.picked {
+    visibility: hidden;
+}
+
+/* 破损的 portal（始终可见，位于 6 - 8i），高度为史蒂夫的 4 倍 */
+.ruined-portal-sprite {
+    position: absolute;
+    left: 50%;
+    bottom: 50%;
+    height: 36vh;
+    width: auto;
+    transform-origin: bottom center;
+    z-index: 7;
+    image-rendering: pixelated;
+    pointer-events: none;
+}
+
+/* 物品栏通用槽位内容物（罗盘/镐子/宝藏图标）
+   left 加半个透明宽（9vh × 7/48），让物品对齐可见格子的中心 */
+.hotbar-slot .slot-item {
+    position: absolute;
+    left: calc(50% + 9vh * 7 / 48);
+    top: 50%;
+    transform: translate(-50%, -50%);
+    height: 56%;
+    width: auto;
+}
+
+/* 镐子稍大一号，作为耐久条宽度参照 */
+.hotbar-slot .pickaxe-in-slot {
+    height: 64%;
+}
+
+/* 宝藏图标初始隐藏，飞入后才显示 */
+.hotbar-slot .treasure-in-slot {
+    visibility: hidden;
+}
+
+.hotbar-slot .treasure-in-slot.show {
+    visibility: visible;
+}
+
+/* 镐子耐久条：green_progress 叠在 green_background 上，
+   每用一次 progress 宽度减少 1/5 */
+.durability-bar {
+    position: absolute;
+    left: calc(50% + 9vh * 7 / 48);
+    bottom: 8%;
+    transform: translateX(-50%);
+    /* 与镐子（9vh × 64%）等宽 */
+    width: calc(9vh * 0.64);
+    height: 12%;
+}
+
+.durability-bar img {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+}
+
+/* 罗盘悬浮窗：选中槽位 1 时显示在物品栏上方，黑底白字 */
+.compass-tooltip {
+    position: fixed;
+    left: 50%;
+    bottom: 12.5vh;
+    transform: translate(-50%, 2vh);
+    z-index: 45;
+
+    max-width: 80vw;
+    padding: 1.4vh 2.4vh;
+    box-sizing: border-box;
+
+    background: rgba(0, 0, 0, 0.85);
+    border: 2px solid #ffffff;
+    color: #ffffff;
+    font-family: Minecraft, sans-serif;
+    font-size: 2.2vh;
+    line-height: 1.4;
+    text-align: center;
+
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.compass-tooltip.show {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+/* 挖空提示：屏幕中间粗体，渐显停留 3 秒后渐隐 */
+.no-treasure-banner {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 120;
+
+    color: #111111;
+    font-family: Minecraft, sans-serif;
+    font-weight: bold;
+    font-size: clamp(36px, 6vw, 84px);
+    white-space: nowrap;
+
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+}
+
+.no-treasure-banner.show {
+    opacity: 1;
+}
+
+/* ===== LEVEL 4 ===== */
+
+/* ±1500 数轴：单位长度和 level3 一样（420vw / 40），所以整条轴是 level3 的 75 倍长 */
+.level4-page .number-line {
+    width: calc(420vw * 75);
+    min-width: 180000px;
+    height: calc(var(--imaginary-unit, 10.5vw) * 3000 + 12vh);
+    min-height: 181000px;
+}
+
+/* 虚轴轴线延长到 ±1500i */
+.level4-page .imaginary-axis {
+    height: calc(var(--imaginary-unit) * 1500 + 5vh);
+}
+
+/* |z| 和 θ 两行的行距是普通的 1.5 倍 */
+.level4-page #coord-mod,
+.level4-page #coord-arg {
+    line-height: 1.5;
+}
+
+/* 屏幕边缘坐标刻度尺：实部贴上/下边（下方时在 hotbar 上方），虚部贴左/右边 */
+.coord-ruler {
+    position: fixed;
+    z-index: 15;
+    pointer-events: none;
+    color: #111111;
+    font-family: Minecraft, sans-serif;
+    font-size: clamp(14px, 2.2vh, 24px);
+    line-height: 1;
+}
+
+.ruler-tick {
+    position: absolute;
+    background: #111111;
+    visibility: hidden;
+}
+
+.ruler-label {
+    position: absolute;
+    white-space: nowrap;
+    visibility: hidden;
+}
+
+/* 实部尺：短竖线 + 数字 */
+.coord-ruler-x {
+    left: 0;
+    right: 0;
+    height: 4vh;
+}
+
+/* 下方时贴页面最底边（层级在 hotbar 之下，允许与物品栏重叠） */
+.coord-ruler-x.at-bottom {
+    bottom: 0;
+}
+
+.coord-ruler-x.at-top {
+    top: 1vh;
+}
+
+.coord-ruler-x .ruler-tick {
+    width: 2px;
+    height: 1.2vh;
+    transform: translateX(-50%);
+}
+
+.coord-ruler-x.at-bottom .ruler-tick {
+    bottom: 0;
+}
+
+.coord-ruler-x.at-top .ruler-tick {
+    top: 0;
+}
+
+.coord-ruler-x .ruler-label {
+    transform: translateX(-50%);
+}
+
+.coord-ruler-x.at-bottom .ruler-label {
+    bottom: 1.6vh;
+}
+
+.coord-ruler-x.at-top .ruler-label {
+    top: 1.6vh;
+}
+
+/* 虚部尺：短横线 + 数字 */
+.coord-ruler-y {
+    top: 0;
+    bottom: 0;
+    width: 6vh;
+}
+
+.coord-ruler-y.at-left {
+    left: 0;
+}
+
+.coord-ruler-y.at-right {
+    right: 0;
+}
+
+.coord-ruler-y .ruler-tick {
+    width: 1.2vh;
+    height: 2px;
+    transform: translateY(-50%);
+}
+
+.coord-ruler-y.at-left .ruler-tick {
+    left: 0;
+}
+
+.coord-ruler-y.at-right .ruler-tick {
+    right: 0;
+}
+
+.coord-ruler-y .ruler-label {
+    /* 数字相对刻度垂直居中后再往下 0.6vh */
+    transform: translateY(calc(-50% + 0.6vh));
+}
+
+.coord-ruler-y.at-left .ruler-label {
+    left: 1.8vh;
+}
+
+.coord-ruler-y.at-right .ruler-label {
+    right: 1.8vh;
+}
+
+/* theta 物品框：固定在左上角坐标下方，初始隐藏。
+   三层叠放：item_frame 打底，theta 居中可旋转，hotbar_selection 作最外框 */
+.theta-frame {
+    position: fixed;
+    left: 4vw;
+    top: 19vh;
+    width: 9vh;
+    height: 9vh;
+    z-index: 20;
+
+    display: none;
+    cursor: pointer;
+}
+
+.theta-frame.show {
+    display: block;
+}
+
+.theta-frame img {
+    position: absolute;
+    image-rendering: pixelated;
+    pointer-events: none;
+}
+
+.theta-frame .theta-frame-inner {
+    left: 50%;
+    top: 50%;
+    width: 86%;
+    height: 86%;
+    transform: translate(-50%, -50%);
+}
+
+.theta-frame .theta-frame-theta {
+    left: 50%;
+    top: 50%;
+    width: 55%;
+    height: 55%;
+}
+
+.theta-frame .theta-frame-border {
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* LINES UNDER HEADINGS */
+
+.wiki-sidebar h2 {
+    padding-bottom: 3px;
+    border-bottom: 1px solid #cccccc;
+}
+
+.wiki-main h2 {
+    padding-bottom: 3px;
+    border-bottom: 1px solid #cccccc;
+}
+
+/* COLLAPSIBLE CONTENTS */
+
+.wiki-sidebar details {
+    margin-bottom: 0px;
+}
+
+.wiki-sidebar summary {
+    list-style: none;
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding-left: 12px;
+
+    color: black;
+    font-family: Minecraft, sans-serif;
+    font-size: 18px;
+
+    cursor: pointer;
+}
+
+.wiki-sidebar summary::-webkit-details-marker {
+    display: none;
+}
+
+.wiki-sidebar summary::before {
+    content: "";
+    position: absolute;
+
+    left: 0;
+    top: calc(0.55em - 0.5vh);
+    transform: none;
+
+    width: 0;
+    height: 0;
+
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: 6px solid black;
+}
+
+.wiki-sidebar details[open] > summary::before {
+    left: 0;
+    top: calc(0.55em - 0.5vh);
+    transform: rotate(90deg);
+
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: 6px solid black;
+}
+
+.wiki-sidebar .sub-items {
+    margin-left: 2.2vh;
+    margin-top: 0;
+}
+
+.wiki-sidebar .sub-items a {
+    display: block;
+
+    margin-bottom: 0px;
+
+    color: #5a5a5a;
+    font-family: Minecraft, sans-serif;
+    font-size: 15px;
+
+    text-decoration: none;
+}
+
+.wiki-sidebar .nested-sub-items a {
+    color: #2f6f9f;
+}
+
+.wiki-sidebar .sub-items a:hover {
+    color: black;
+}
+
+.wiki-sidebar .nested-details {
+    margin-top: 0.8vh;
+}
+
+.wiki-sidebar .nested-details > summary {
+    padding-left: 16px;
+    font-size: 15px;
+    color: #5a5a5a;
+}
+
+.wiki-sidebar .nested-details .nested-sub-items {
+    margin-left: 1.8vh;
+    margin-top: 0.6vh;
+}
+
+.wiki-main h3 {
+    margin-top: 2vh;
+    margin-bottom: 1vh;
+
+    color: #5a5a5a !important;
+    font-family: Minecraft, sans-serif;
+    font-size: 24px;
+
+    text-shadow: none;
+}
+
+.wiki-main h4 {
+    margin-top: 1.2vh;
+    margin-bottom: 0.8vh;
+
+    color: #2f6f9f !important;
+    font-family: Minecraft, sans-serif;
+    font-size: 20px;
+
+    text-shadow: none;
+}
+
+/* ============ LEVEL 5 ============ */
+
+/* 白色背景（开局） */
+.level5-page {
+    background: #ffffff;
+}
+
+/* 数轴整体放大 3 倍：宽度 1260vw，高度同步加倍 */
+.level5-page .number-line {
+    width: 1260vw;
+    min-width: 7200px;
+    height: calc(var(--imaginary-unit, 10.5vw) * 40 + 12vh);
+    min-height: 7200px;
+    transition: width 1s ease-in, min-width 1s ease-in;
+}
+
+/* 收起第二阶段：number-line 宽度回到 level1 比例 */
+.level5-page .number-line.to-level1 {
+    width: 420vw;
+    min-width: 2400px;
+}
+
+/* 虚轴延长到 ±20i（单位已是 3 倍，公式与 level3 同） */
+.level5-page .imaginary-axis {
+    height: calc(var(--imaginary-unit) * 20 + 5vh);
+    overflow: visible;
+    transition: transform 1s ease-in;
+}
+
+/* 压扁原点在实轴端：正虚轴向原点压、负虚轴向原点压 */
+.level5-page #imaginary-axis-pos {
+    transform-origin: center bottom;
+}
+
+.level5-page #imaginary-axis-neg {
+    transform-origin: center top;
+}
+
+/* 收起动画：整根轴（刻度/标签/箭头一起）向实轴压扁 */
+.level5-page .imaginary-axis.collapsing {
+    transform: translateX(-50%) scaleY(0);
+}
+
+/* 单位圆：半径 1 单位，黑色，史蒂夫的行走轨迹；收起后隐藏 */
+#unit-circle {
+    position: absolute;
+    left: 50%;
+    bottom: 50%;
+    width: calc(var(--imaginary-unit) * 2);
+    height: calc(var(--imaginary-unit) * 2);
+    border: 3px solid #111111;
+    border-radius: 50%;
+    transform: translate(-50%, 50%);
+    z-index: 1;
+    pointer-events: none;
+}
+
+.level5-page.collapsed #unit-circle {
+    display: none;
+}
+
+/* E 精灵：尾随史蒂夫 90°，开局隐藏 */
+.e-sprite {
+    position: absolute;
+    left: 50%;
+    bottom: 50%;
+    height: 7vh;
+    width: auto;
+    transform: translate(-50%, 0);
+    transform-origin: bottom center;
+    z-index: 6;
+    image-rendering: pixelated;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s ease-in;
+}
+
+.e-sprite.revealed {
+    opacity: 1;
+}
+
+.e-sprite img {
+    display: block;
+    height: 100%;
+    width: auto;
+}
+
+/* E 到达端点后：图变白、指数变白，显示 e^(iπ) / e^(i0) */
+.e-sprite.e-at-endpoint img {
+    filter: brightness(0) invert(1); /* 黑色 E.png → 白色 */
+}
+
+/* 白色 e（端点态）的指数位置：与黑色 e 分开控制 */
+.e-sprite.e-at-endpoint .e-exponent {
+    top: 1vh;
+    right: -2.8vh;
+    color: #ffffff;
+    text-shadow: 0.3vh 0.3vh 0 #3f3f3f;
+}
+
+/* E 右上角的指数 iθ */
+.e-exponent {
+    position: absolute;
+    top: -0.2vh;
+    right: -9.4vh;
+    color: #111111;
+    font-family: Minecraft, sans-serif;
+    font-size: 2vh;
+    line-height: 1;
+    white-space: nowrap;
+    text-shadow: 1px 1px 0 #ffffff;
+}
+
+/* End 传送门：开局隐藏，E 回到 z=-1 时显现（图层在 Steve 和 E 之下） */
+.end-sprite {
+    position: absolute;
+    left: 50%;
+    bottom: 50%;
+    height: 18vh;
+    width: auto;
+    transform: translate(-50%, 0);
+    transform-origin: bottom center;
+    z-index: 5;
+    image-rendering: pixelated;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s ease-in;
+}
+
+.end-sprite.revealed {
+    opacity: 1;
+}
+
+/* 数轴收起后：背景变黑，轴线/刻度/标签变白 */
+.level5-page.collapsed {
+    background: #000000;
+}
+
+.level5-page.collapsed .axis-line,
+.level5-page.collapsed .imaginary-axis-line {
+    background: #ffffff;
+}
+
+.level5-page.collapsed .axis-arrow.left {
+    border-right-color: #ffffff;
+}
+
+.level5-page.collapsed .axis-arrow.right {
+    border-left-color: #ffffff;
+}
+
+.level5-page.collapsed .axis-tick,
+.level5-page.collapsed .imaginary-tick {
+    background: #ffffff;
+}
+
+.level5-page.collapsed .axis-label,
+.level5-page.collapsed .imaginary-label,
+.level5-page.collapsed .steve-coord-label {
+    color: #ffffff;
+}
+
+.level5-page.collapsed .imaginary-axis::before,
+.level5-page.collapsed .imaginary-axis-neg::after {
+    border-bottom-color: #ffffff;
+    border-top-color: #ffffff;
+}
+
+/* level5 Tips 弹窗沿用 .system-toast 默认右上角位置 */
+
+/* level5 Tips 弹窗字号加大（标题 + 正文） */
+.level5-page #tips-toast .system-toast-line {
+    font-size: 3.2vh;
+}
+
+.level5-page #tips-toast .system-toast-line.white-line {
+    font-size: 2.8vh;
+}
+
+/* level5 Tips 弹窗压扁一点（文字绝对定位居中，随背景自动居中） */
+.level5-page #tips-toast .system-toast-bg {
+    height: 11vh;
+}
+
+/* level5 Tips 文字（标题 + 正文）整体下移 0.6vh */
+.level5-page #tips-toast .system-toast-text {
+    transform: translateY(0.6vh);
+}
+
+/* level5 Advancement 图标（End Stone）比通用大一号 */
+.level5-page #advancement-toast .advancement-toast-item-icon {
+    height: 6vh;
+}
+
+/* ---- level5 收起后的新流程 ---- */
+
+/* e 左边的 i·r 标签（ire^(iθ) 的 ir 部分），i 复制动画完成后显示 */
+.e-r-label {
+    position: absolute;
+    right: calc(100% + -2.0vh);
+    top: 5.2vh;
+    transform: translateY(-50%);
+    color: #ffffff;
+    font-family: Minecraft, sans-serif;
+    font-size: 4.0vh;
+    line-height: 1;
+    white-space: nowrap;
+    text-shadow: 0.3vh 0.3vh 0 #3f3f3f;
+    opacity: 0;
+}
+
+.e-r-label.show {
+    opacity: 1;
+}
+
+/* level5 展开横幅：在黑幕扩散上显示，需盖过遮罩并用白色文字；位置靠页面顶部 */
+#expand-banner {
+    z-index: 220;
+    top: 20vh;
+    color: #ffffff;
+    text-shadow: 0.3vh 0.3vh 0 #3f3f3f;
+    font-size: clamp(24px, 3.4vw, 42px);
+    white-space: nowrap; /* 每行保持完整，只按 <br> 分两行 */
+    text-align: center;
+}
+
+/* 史蒂夫头顶实时坐标：跟随水平移动与跳跃，内容与左上角 z 坐标一致 */
+.steve-head-label {
+    position: absolute;
+    left: 50%;
+    bottom: calc(50% + 8vh);
+    color: #ffffff;
+    font-family: Minecraft, sans-serif;
+    font-size: 2.6vh;
+    line-height: 1;
+    text-shadow: 0.25vh 0.25vh 0 #3f3f3f;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 6;
+}
+
+/* 白色复平面阶段（body 不再 collapsed）：头顶坐标换成黑字浅阴影 */
+.level5-page:not(.collapsed) .steve-head-label {
+    color: #111111;
+    text-shadow: 0.25vh 0.25vh 0 #bfbfbf;
+}
+
+/* ============ LEVEL 6（末地之战重制版） ============ */
+
+/* 黑色背景 + 白色数轴 */
+.level6-page {
+    background: #000000;
+}
+
+.level6-page .axis-line,
+.level6-page .imaginary-axis-line {
+    background: #ffffff;
+}
+
+/* 数轴主线加粗两倍（实轴 3px→6px，虚轴 3px→6px） */
+.level6-page .axis-line {
+    height: 6px;
+}
+
+.level6-page .imaginary-axis-line {
+    width: 6px;
+}
+
+.level6-page .axis-arrow.left {
+    border-right-color: #ffffff;
+}
+
+.level6-page .axis-arrow.right {
+    border-left-color: #ffffff;
+}
+
+.level6-page .axis-tick,
+.level6-page .imaginary-tick {
+    background: #ffffff;
+}
+
+.level6-page .axis-label,
+.level6-page .imaginary-label,
+.level6-page .steve-coord-label {
+    color: #ffffff;
+    text-shadow: 0.3vh 0.3vh 0 #3f3f3f;
+}
+
+/* 刻度数字放大两号 */
+.level6-page .axis-label,
+.level6-page .imaginary-label {
+    font-size: clamp(40px, 4.8vw, 68px);
+}
+
+/* 刻度数字整体下移 2vh（实轴标签 top 增加；虚轴标签 translateY 下移） */
+.level6-page .axis-label {
+    top: calc(50% + 5.5vh);
+}
+
+.level6-page .imaginary-axis .imaginary-label {
+    transform: translateY(calc(-50% + 4.7vh));
+}
+
+.level6-page .imaginary-axis-neg .imaginary-label {
+    transform: translateY(calc(50% + 1.1vh));
+}
+
+.level6-page .imaginary-axis::before,
+.level6-page .imaginary-axis-neg::after {
+    border-bottom-color: #ffffff;
+    border-top-color: #ffffff;
+}
+
+/* 世界：1 格 = 10.5vw（与 lv1~4 及 lv5 结尾一致），宽度由 JS 写入；高度容纳 ±100i；transform 用于开场缩放
+   flex:none：wrap 是 flex 容器，禁止 #world 被收缩到内容宽度（否则实轴刻度百分比被压缩、与虚轴单位不一致） */
+.level6-page .number-line {
+    flex: none;
+    min-height: 0;
+    height: calc(var(--imaginary-unit, 1vw) * 202 + 12vh);
+    transform-origin: 50% 50%;
+    transition: transform 2.5s cubic-bezier(0.45, 0.05, 0.35, 1);
+}
+
+/* 虚轴延长到 ±100i */
+.level6-page .imaginary-axis {
+    height: calc(var(--imaginary-unit) * 100 + 5vh);
+}
+
+/* 玩家活动边界：半径 55 格的圆圈 */
+#play-circle {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: calc(var(--imaginary-unit) * 110);
+    height: calc(var(--imaginary-unit) * 110);
+    border: 12px solid rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* End Spike：立在模长 64 的落点上（底部中心锚点；尺寸用 vh，坐标用格） */
+.endspike-sprite {
+    position: absolute;
+    height: calc(var(--imaginary-unit) * 9);
+    width: auto;
+    transform: translate(-50%, -100%);
+    image-rendering: pixelated;
+    z-index: 5;
+    pointer-events: none;
+}
+
+/* End Crystal：立在 spike 顶部（笼中水晶由 JS 降低高度） */
+.crystal-sprite {
+    position: absolute;
+    height: calc(var(--imaginary-unit) * 3.1);
+    width: auto;
+    transform: translate(-50%, -100%);
+    image-rendering: pixelated;
+    filter: drop-shadow(0 0 1vh rgba(0, 255, 255, 0.9)) drop-shadow(0 0 2.6vh rgba(0, 255, 255, 0.5));
+    z-index: 6;
+    pointer-events: none;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+/* 水晶被击中：爆炸（放大 + 淡出） */
+.crystal-sprite.boom {
+    opacity: 0;
+    transform: translate(-50%, -100%) scale(2.4);
+}
+
+/* 末影龙：gif 默认朝左，向右飞时翻转 */
+#dragon-sprite {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    height: calc(var(--imaginary-unit) * 24);
+    width: auto;
+    transform: translate(-50%, -50%);
+    z-index: 8;
+    pointer-events: none;
+    transition: opacity 0.6s ease;
+}
+
+#dragon-sprite.dead {
+    opacity: 0;
+}
+
+#dragon-sprite img {
+    display: block;
+    height: 100%;
+    width: auto;
+    image-rendering: pixelated;
+}
+
+#dragon-sprite img.flip {
+    transform: scaleX(-1);
+}
+
+/* 龙上方的指数式位置标签：r e^i(θ)，白色（背景为黑） */
+#dragon-label {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    display: flex;
+    align-items: flex-start;
+    white-space: nowrap;
+    z-index: 9;
+    pointer-events: none;
+    color: #ffffff;
+    font-family: Minecraft, sans-serif;
+    transition: opacity 0.6s ease;
+}
+
+#dragon-label.dead {
+    opacity: 0;
+}
+
+#dragon-r {
+    font-size: 15.6vh;
+    line-height: 1;
+    transform: translateY(5vh);
+    text-shadow: 1.8vh 1.8vh 0 #3f3f3f;
+}
+
+#dragon-label .dragon-e {
+    font-size: 25.2vh;
+    line-height: 1;
+    text-shadow: 1.8vh 1.8vh 0 #3f3f3f;
+}
+
+#dragon-exp {
+    font-size: 13.2vh;
+    line-height: 1;
+    transform: translateY(-3.6vh);
+    text-shadow: 1.8vh 1.8vh 0 #3f3f3f;
+}
+
+/* 箭矢：平抛轨迹，落地停 3s 后淡出 */
+.arrow-sprite {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    height: 12vh;
+    width: auto;
+    transform: translate(-50%, -50%);
+    image-rendering: pixelated;
+    z-index: 7;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+}
+
+.arrow-sprite.fade {
+    opacity: 0;
+}
+
+/* 末影龙血条：pink_progress 叠在 pink_background 上，宽度 = 血量百分比 */
+#boss-bar {
+    position: fixed;
+    top: 2.5vh;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(60vh, 44vw);
+    z-index: 30;
+    text-align: center;
+    pointer-events: none;
+}
+
+#boss-bar .boss-name {
+    color: #ffffff;
+    font-family: Minecraft, sans-serif;
+    font-size: 2.6vh;
+    line-height: 1;
+    text-shadow: 0.3vh 0.3vh 0 #3f3f3f;
+    margin-bottom: 0.8vh;
+}
+
+.boss-bar-frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 182 / 5;   /* 原图 182x5，保持原比例，不拉伸 */
+}
+
+.boss-bar-frame img {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    image-rendering: pixelated;
+}
+
+.boss-bar-frame .boss-bg {
+    width: 100%;
+}
+
+#boss-progress {
+    width: 100%;
+}
+
+/* 弩箭耐久条（green_progress / green_background）：首次使用后才出现 */
+.level6-page .durability-bar {
+    visibility: hidden;
+}
+
+.level6-page .durability-bar.show {
+    visibility: visible;
+}
+
+/* 地图：选中槽位 2 时展示，Map_Empty 上叠水晶图标 / 红色 X */
+#map-overlay {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(72vh, 80vw);
+    aspect-ratio: 1;
+    z-index: 80;
+    display: none;
+    pointer-events: none;
+}
+
+#map-overlay.show {
+    display: block;
+}
+
+#map-overlay .map-base {
+    display: block;
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+}
+
+#map-icons {
+    position: absolute;
+    inset: 0;
+}
+
+.map-spot {
+    position: absolute;
+    transform: translate(-50%, -50%);
+}
+
+.map-spot img {
+    display: block;
+    width: 12%;
+    min-width: 4.5vh;
+    image-rendering: pixelated;
+}
+
+.map-x {
+    display: block;
+    color: #ff3030;
+    font-family: Minecraft, sans-serif;
+    font-weight: bold;
+    font-size: 5vh;
+    line-height: 1;
+    text-shadow: 0.3vh 0.3vh 0 #3f3f3f;
+}
+
+/* Hints 弹窗：正文较长，允许换行、背景加高 */
+.level6-page #hints-toast {
+    top: 18vh; /* 让开同位置的 Advancement 弹窗 */
+}
+
+.level6-page #hints-toast .system-toast-bg {
+    height: 20vh;
+}
+
+.level6-page #hints-toast .system-toast-line {
+    white-space: normal;
+    font-size: 2.4vh;
+}
+
+.level6-page #hints-toast .system-toast-line.white-line {
+    font-size: 2.2vh;
+}
+
+.level6-page #advancement-toast-item-icon,
+.level6-page .advancement-toast-item-icon {
+    height: 6vh;
+}
+
+/* 失败文字：MC 死亡屏风格 */
+.fail-text {
+    color: #ff5555;
+    text-shadow: 4px 4px 0 #3f0000;
+}
+
+/* 通关画面：公式从中心飞出（z 低于文字与按钮，不会覆盖它们） */
+#formula-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.win-overlay .win-text,
+.win-overlay button {
+    position: relative;
+    z-index: 2;
+}
+
+.formula-fly {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    color: #ffffff;
+    font-family: Minecraft, sans-serif;
+    font-size: 1.9vh;
+    line-height: 1;
+    white-space: nowrap;
+    opacity: 0;
+    will-change: transform, opacity;
+}
+
+/* 由虚到实、由中间到旁边：从中心淡入并放大，直线飞出屏幕（不做停留/渐隐） */
+.formula-fly.go {
+    animation: formula-drift 2s linear forwards;
+}
+
+@keyframes formula-drift {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    14%  { opacity: 1; }
+    100% { opacity: 1; transform: translate(calc(-50% + var(--fx, 0vw)), calc(-50% + var(--fy, 0vh))) scale(3); }
+}
+
+/* ===== 终末之诗：通关后滚动字幕 ===== */
+#end-poem {
+    position: fixed;
+    inset: 0;
+    z-index: 600;
+    display: none;
+    overflow: hidden;
+    background-color: #000000;
+    background-image: url('pngs/endpoem.png');
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center bottom;
+    opacity: 1;
+}
+#end-poem.show {
+    display: block;
+}
+#end-poem.fade-out {
+    opacity: 0;
+    transition: opacity 1s ease;
+}
+.end-poem-scroll {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    z-index: 2;
+    padding: 0 7vw;
+    box-sizing: border-box;
+    text-align: center;
+    transform: translateY(100vh);
+}
+#end-poem.show .end-poem-scroll {
+    animation: endpoem-scroll 143s linear forwards;
+}
+@keyframes endpoem-scroll {
+    0%   { transform: translateY(100vh); }
+    100% { transform: translateY(calc(-100% - 100vh)); }
+}
+.end-poem-line {
+    font-family: Minecraft, sans-serif;
+    font-size: 1.6vw;
+    line-height: 1.55;
+    margin: 0 0 3.1em;
+    color: #00FF00;
+    text-align: left;
+    word-wrap: break-word;
+}
+.end-poem-line.cyan {
+    color: #00FFFF;
+}
+.end-poem-title {
+    font-family: Minecraft, sans-serif;
+    font-size: clamp(70px, 6.5vw, 125px);
+    color: #ffffff;
+    text-shadow: 6px 6px 0 #555555;
+    text-align: center;
+    margin: 0 0 8vh;
+    line-height: 1.1;
+}
+
+/* 答题大弹窗：页面中间，MC 风格深色面板 */
+.quiz-modal {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 150;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 2.2vh;
+    padding: 4.5vh 5vw;
+    background: rgba(12, 12, 12, 0.88);
+    border: 3px solid #ffffff;
+    box-shadow: 1vh 1vh 0 rgba(0, 0, 0, 0.45);
+    max-width: 82vw;
+}
+
+.quiz-modal.show {
+    display: flex;
+}
+
+.quiz-modal .quiz-title {
+    color: #ffff55;
+    font-family: Minecraft, sans-serif;
+    font-size: clamp(26px, 4.2vh, 44px);
+    text-shadow: 2px 2px 0 #3f3f3f;
+    line-height: 1.3;
+}
+
+.quiz-modal .quiz-sub {
+    color: #ffffff;
+    font-family: Minecraft, sans-serif;
+    font-size: clamp(14px, 2.3vh, 22px);
+    text-shadow: 2px 2px 0 #3f3f3f;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.quiz-modal input {
+    width: min(56vh, 70vw);
+    height: 6.5vh;
+    padding: 0 1.5vh;
+    box-sizing: border-box;
+    background: #ffffff;
+    border: 2px solid #a0a0a0;
+    outline: none;
+    font-family: Minecraft, sans-serif;
+    font-size: clamp(16px, 2.6vh, 26px);
+    color: #111111;
+    text-align: center;
+}
+
+.quiz-modal input.wrong {
+    color: #aa0000;
+}
+
+/* Confirm 按钮：继承全局 button 样式，与主页面 LEARN 相同的长按钮 */
+
+/* bedrock：边长 1 单位，出现在四个根的位置 */
+.bedrock-sprite {
+    position: absolute;
+    left: 50%;
+    bottom: 50%;
+    width: calc(var(--imaginary-unit, 10.5vw));
+    height: calc(var(--imaginary-unit, 10.5vw));
+    transform: translate(-50%, 50%);
+    image-rendering: pixelated;
+    z-index: 4;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.bedrock-sprite.revealed {
+    opacity: 1;
+}
+
+/* endportal：正中心与原点重合（尺寸用 vh，坐标用格） */
+.endportal-sprite {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    height: calc(var(--imaginary-unit) * 7);
+    width: auto;
+    transform: translate(-50%, -50%);
+    image-rendering: pixelated;
+    z-index: 4;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.endportal-sprite.revealed {
+    opacity: 1;
+}
+
+/* ===== LEVEL 6：所有文字统一白色 ===== */
+/* 横幅（Welcome to LEVEL 6! / Defeat the Ender Dragon!） */
+.level6-page .no-treasure-banner {
+    color: #ffffff;
+    text-shadow: 0.3vh 0.3vh 0 #3f3f3f;
+}
+
+/* 左上角返回链接 */
+.level6-page .wiki-back-link {
+    color: #ffffff;
+}
+
+/* System 弹窗（Hints!）第一行由黄色改白 */
+.level6-page .system-toast-line {
+    color: #ffffff;
+}
+
+/* Advancement 弹窗标题行（Advancement Made!）由黄色改白 */
+.level6-page .advancement-line-title {
+    color: #ffffff;
+}
+
+/* 弩箭/答题弹窗标题由黄色改白 */
+.level6-page .quiz-modal .quiz-title {
+    color: #ffffff;
+}
+
+/* 输入框：深色底 + 白字（原为白底黑字） */
+.level6-page .quiz-modal input {
+    background: #111111;
+    border-color: #a0a0a0;
+    color: #ffffff;
+}
+
+/* 错误反馈保留红色，便于辨认 */
+.level6-page .quiz-modal input.wrong {
+    color: #ff5555;
+}
+
+/* 失败文字 TRY AGAIN! 也用白色 */
+.level6-page .fail-text {
+    color: #ffffff;
+    text-shadow: 4px 4px 0 #3f3f3f;
+}

@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Level 6</title>
+    <link rel="stylesheet" href="style.css?v=20261003aj">
+</head>
+<body class="level-page level6-page">
+    <div class="level-page-inner">
+        <a class="wiki-back-link" href="index.html">← Back to Home</a>
+        <div id="steve-coord" class="steve-coord-label">
+            <div id="coord-z"></div>
+        </div>
+
+        <!-- 末影龙血条：pink_progress 叠在 pink_background 上（耐久条同款宽度逻辑） -->
+        <div id="boss-bar">
+            <div class="boss-name">Ender Dragon</div>
+            <div class="boss-bar-frame">
+                <img src="pngs/pink_background.png" class="boss-bg" alt="">
+                <img src="pngs/pink_progress.png" id="boss-progress" alt="">
+            </div>
+        </div>
+
+        <div class="number-line-wrap" aria-label="Complex plane">
+            <div class="number-line" id="world">
+                <div class="axis-arrow left"></div>
+                <div class="axis-arrow right"></div>
+                <div class="axis-line"></div>
+                <div class="imaginary-axis imaginary-axis-visible" id="imaginary-axis-pos" aria-label="Positive imaginary axis">
+                    <div class="imaginary-axis-line"></div>
+                    <div id="imaginary-scale" class="imaginary-scale"></div>
+                </div>
+                <div class="imaginary-axis imaginary-axis-neg imaginary-axis-visible" id="imaginary-axis-neg" aria-label="Negative imaginary axis">
+                    <div class="imaginary-axis-line"></div>
+                    <div id="imaginary-scale-neg" class="imaginary-scale"></div>
+                </div>
+                <div id="number-scale" class="number-scale"></div>
+                <!-- 玩家活动边界：半径 55 格的圆圈 -->
+                <div id="play-circle" aria-label="Play boundary"></div>
+                <!-- End Spike × 8（180° 为 with cage），水晶由 JS 生成 -->
+                <div id="dragon-label"><span id="dragon-r"></span><span class="dragon-e">e</span><span id="dragon-exp"></span></div>
+                <div id="dragon-sprite"><img src="pngs/Ender_Dragon.gif" id="dragon-img" alt="Ender Dragon"></div>
+                <!-- endportal：末影龙血量归零后在原点激活 -->
+                <img id="endportal" class="endportal-sprite" src="pngs/endportal.png" alt="End Portal">
+                <img id="steve" class="steve-sprite" src="pngs/Steve_JE5.png.webp" alt="Steve">
+                <img id="steve-run" class="steve-sprite steve-run-img" src="pngs/Sprinting_Steve.png" alt="">
+            </div>
+        </div>
+    </div>
+
+    <!-- 开场/提示横幅：No treasure found 同款动画 -->
+    <div id="level-banner" class="no-treasure-banner">Welcome to LEVEL 6!</div>
+
+    <!-- Hints 弹窗：首次击中末影龙（而非水晶）时右上角弹出 -->
+    <div id="hints-toast" class="system-toast">
+        <img src="pngs/system.png" alt="" class="system-toast-bg">
+        <div class="system-toast-text">
+            <div class="system-toast-line">Hints!</div>
+            <div class="system-toast-line white-line">Aim at the crystals before aiming at the Ender Dragon!</div>
+        </div>
+    </div>
+
+    <!-- 进度弹窗：Take Aim（首次击中龙或水晶）/ The End.（龙血归零） -->
+    <div id="advancement-takeaim" class="advancement-toast with-icon">
+        <img src="pngs/advancement.png" alt="" class="advancement-toast-bg">
+        <img src="pngs/Arrow.png" alt="" class="advancement-toast-item-icon">
+        <div class="advancement-toast-text">
+            <div class="advancement-line-title">Advancement Made!</div>
+            <div class="advancement-line-body">Take Aim</div>
+        </div>
+    </div>
+    <div id="advancement-theend" class="advancement-toast with-icon">
+        <img src="pngs/advancement.png" alt="" class="advancement-toast-bg">
+        <img src="pngs/End_Stone_JE3_BE2.png" alt="" class="advancement-toast-item-icon">
+        <div class="advancement-toast-text">
+            <div class="advancement-line-title">Advancement Made!</div>
+            <div class="advancement-line-body">The End.</div>
+        </div>
+    </div>
+
+    <!-- 物品栏：槽位 1 弩箭（带耐久条），槽位 2 地图 -->
+    <div id="hotbar" class="hotbar show" aria-label="Hotbar"></div>
+
+    <!-- 地图：选中槽位 2 时展示 -->
+    <div id="map-overlay">
+        <img src="pngs/Map_Empty.png" class="map-base" alt="">
+        <div id="map-icons"></div>
+    </div>
+
+    <!-- 瞄准弹窗：弩箭询问攻击坐标（弧度制 / 角度制） -->
+    <div id="aim-modal" class="quiz-modal">
+        <div class="quiz-title">Crossbow</div>
+        <div class="quiz-sub">Type the target coordinate:<br>rcis(a/b pi) for radians, or rcis(theta deg) for degrees</div>
+        <input id="aim-input" type="text" autocomplete="off" spellcheck="false">
+        <div class="small-buttons">
+            <button id="aim-confirm" type="button"><span>Confirm</span></button>
+        </div>
+    </div>
+
+    <!-- 答题弹窗：击中 -64 水晶后输入 z^4=64cis pi 的四个根 -->
+    <div id="quiz-modal" class="quiz-modal">
+        <div class="quiz-title">z^4=64cis pi, z=? </div>
+        <div class="quiz-sub">Type your answer in the form of rcis(a/b pi),<br>one root at a time, 3 sig.fig. for r.</div>
+        <input id="quiz-input" type="text" autocomplete="off" spellcheck="false">
+        <div class="small-buttons">
+            <button id="quiz-confirm" type="button"><span>Confirm</span></button>
+        </div>
+    </div>
+
+    <!-- 失败画面：60 支箭用完仍未击败末影龙 -->
+    <div id="fail-overlay" class="win-overlay">
+        <div class="win-text fail-text">TRY AGAIN!</div>
+        <button id="fail-back-btn" type="button"><span>BACK</span></button>
+    </div>
+
+    <!-- 终末之诗：通关后滚动字幕，末尾淡出进入 Congratulation -->
+    <div id="end-poem">
+        <div class="end-poem-scroll" id="end-poem-scroll"></div>
+    </div>
+
+    <!-- 通关画面：Congratulation 下方持续飞出复数公式 -->
+    <div id="win-overlay" class="win-overlay">
+        <div id="formula-layer"></div>
+        <div class="win-text">CONGRATULATIONS!</div>
+        <button id="win-back-btn" type="button"><span>BACK</span></button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // ================= 基础常量 =================
+        const AXIS = 100;           // 实部/虚部范围 ±100
+        const UNIT_VW = 5.25;       // 1 格 = 5.25vw（lv1~3 单位 10.5vw 的一半）
+        const PLAY_R = 55;          // 玩家活动半径（格）
+        const SPIKE_R = 64;         // End Spike 模长（格）
+        const CRYSTAL_HIT_R = 1;    // 水晶命中半径（格）
+        const DRAGON_HIT_R = 10;    // 末影龙命中半径（格）：落点距龙中心 ±10 格内均命中（r 允许 ±10 误差）
+        const PLAYER_SPEED = 0.006; // 玩家速度（格/ms）
+        const ARROW_SPEED = 90;     // 箭矢水平速度（格/s）
+        const CROSSBOW_MAX = 60;    // 弩箭可用次数
+        const DRAGON_HP_MAX = 100;
+
+        const numberLineWrap = document.querySelector('.number-line-wrap');
+        const world = document.getElementById('world');
+        let unitPx = window.innerWidth * UNIT_VW / 100;
+
+        function applyWorldSize() {
+            world.style.width = (AXIS * 2 * unitPx) + 'px';
+            world.style.setProperty('--imaginary-unit', unitPx + 'px');
+        }
+        applyWorldSize();
+
+        if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+        // 把原点居中到视口中央（用 getBoundingClientRect 对齐视觉中心，缩放后仍保持居中）
+        function centerCamera() {
+            if (!numberLineWrap || !world) return;
+            const wr = numberLineWrap.getBoundingClientRect();
+            const r = world.getBoundingClientRect();
+            numberLineWrap.scrollLeft += (r.left + r.width / 2) - (wr.left + wr.width / 2);
+            window.scrollBy(0, (r.top + r.height / 2) - window.innerHeight / 2);
+        }
+
+        // ================= 数轴刻度（白轴黑底，实部虚部都标数字） =================
+        const scale = document.getElementById('number-scale');
+        const imaginaryScale = document.getElementById('imaginary-scale');
+        const imaginaryScaleNeg = document.getElementById('imaginary-scale-neg');
+
+        for (let v = -AXIS; v <= AXIS; v += 5) {
+            const pct = ((v + AXIS) / (AXIS * 2)) * 100;
+            const tick = document.createElement('div');
+            tick.className = 'axis-tick';
+            tick.style.left = pct + '%';
+            tick.style.height = (v % 10 === 0 ? 3 : 1.8) + 'vh';
+            scale.appendChild(tick);
+            if (v % 10 === 0) {
+                const label = document.createElement('div');
+                label.className = 'axis-label';
+                label.style.left = pct + '%';
+                label.textContent = v;
+                scale.appendChild(label);
+            }
+        }
+        // 虚轴刻度用 calc(var(--imaginary-unit)) 定位，窗口缩放时自动跟随
+        for (let v = 5; v <= AXIS; v += 5) {
+            const tick = document.createElement('div');
+            tick.className = 'imaginary-tick';
+            tick.style.bottom = `calc(var(--imaginary-unit) * ${v} - 1px)`;
+            tick.style.height = (v % 10 === 0 ? 3 : 1.8) + 'vh';
+            imaginaryScale.appendChild(tick);
+            if (v % 10 === 0) {
+                const label = document.createElement('div');
+                label.className = 'imaginary-label';
+                label.style.bottom = `calc(var(--imaginary-unit) * ${v} - 9px)`;
+                label.textContent = v + 'i';
+                imaginaryScale.appendChild(label);
+            }
+
+            const tickN = document.createElement('div');
+            tickN.className = 'imaginary-tick';
+            tickN.style.top = `calc(var(--imaginary-unit) * ${v} - 1px)`;
+            tickN.style.height = (v % 10 === 0 ? 3 : 1.8) + 'vh';
+            imaginaryScaleNeg.appendChild(tickN);
+            if (v % 10 === 0) {
+                const labelN = document.createElement('div');
+                labelN.className = 'imaginary-label';
+                labelN.style.top = `calc(var(--imaginary-unit) * ${v} - 9px)`;
+                labelN.textContent = '-' + v + 'i';
+                imaginaryScaleNeg.appendChild(labelN);
+            }
+        }
+
+        // ================= End Spike × 8 + End Crystal =================
+        // 6 个 End Spike 在模长 64（已删除 135° 与 315°）；180°（即 -64）换成 with cage
+        const SPIKE_ANGLES = [0, 45, 90, 180, 225, 270];
+        const crystals = SPIKE_ANGLES.map((deg) => {
+            const rad = deg * Math.PI / 180;
+            const xu = Math.cos(rad) * SPIKE_R;
+            const yu = Math.sin(rad) * SPIKE_R;
+            const caged = deg === 180;
+
+            const spike = document.createElement('img');
+            spike.className = 'endspike-sprite';
+            spike.src = caged ? 'pngs/End_spike_with_Cage.png.webp' : 'pngs/endspike.png';
+            spike.alt = '';
+            spike.style.left = `calc(50% + var(--imaginary-unit) * ${xu} + 0.3vw)`;
+            spike.style.top = `calc(50% - var(--imaginary-unit) * ${yu} + 63.7vh)`;
+            world.appendChild(spike);
+
+            // caged 柱子（180°）笼里已含水晶，不再额外加水晶；其余柱子顶部立水晶
+            let el = null;
+            if (!caged) {
+                const crystal = document.createElement('img');
+                crystal.className = 'crystal-sprite';
+                crystal.src = 'pngs/End_Crystal_JE2.gif';
+                crystal.alt = '';
+                crystal.style.left = `calc(50% + var(--imaginary-unit) * ${xu})`;
+                crystal.style.top = `calc(50% - var(--imaginary-unit) * ${yu})`;
+                world.appendChild(crystal);
+                el = crystal;
+            }
+
+            return { deg, xu, yu, caged, destroyed: false, el, spike };
+        });
+
+        // ================= 地图（槽位 2）：Map_Empty + 8 个水晶图标/红 X =================
+        const mapOverlay = document.getElementById('map-overlay');
+        const mapIconsBox = document.getElementById('map-icons');
+        const MAP_R = 38; // 图标分布半径（占地图边长的百分比）
+        const mapEls = crystals.map((c) => {
+            const rad = c.deg * Math.PI / 180;
+            const wrap = document.createElement('span');
+            wrap.className = 'map-spot';
+            // 水晶标整体偏移：8 个标保持 45° 环对称（上下左右在中线上、对角 45°），同步右移 2vw
+            wrap.style.left = `calc(${(50 + MAP_R * Math.cos(rad)).toFixed(2)}% + 1.5vw)`;
+            wrap.style.top = (50 - MAP_R * Math.sin(rad)).toFixed(2) + '%';
+            const icon = document.createElement('img');
+            icon.src = 'pngs/End_Crystal_Icon.png';
+            icon.alt = '';
+            const x = document.createElement('span');
+            x.className = 'map-x';
+            x.textContent = 'X';
+            x.style.display = 'none';
+            wrap.appendChild(icon);
+            wrap.appendChild(x);
+            mapIconsBox.appendChild(wrap);
+            return { icon, x };
+        });
+        function refreshMap() {
+            crystals.forEach((c, i) => {
+                mapEls[i].icon.style.display = c.destroyed ? 'none' : 'block';
+                mapEls[i].x.style.display = c.destroyed ? 'block' : 'none';
+            });
+        }
+
+        // ================= Steve：2D 移动（WASD），限制在半径 55 的圆内 =================
+        const steve = document.getElementById('steve');
+        const steveRun = document.getElementById('steve-run');
+        const STEVE_STANDING_SRC = 'pngs/Steve_JE5.png.webp';
+        const STEVE_SNEAKING_SRC = 'pngs/Sneaking_Steve.png.webp';
+        let isSneaking = false;
+        let isMoving = false;
+        let sprintToggle = false;
+        let sprintInterval = null;
+
+        function updateSteveSprite() {
+            if (!steve) return;
+            const running = isMoving && !isSneaking && sprintToggle;
+            if (steveRun) steveRun.classList.toggle('show', running);
+            steve.classList.toggle('steve-hidden', running);
+            steve.src = isSneaking ? STEVE_SNEAKING_SRC : STEVE_STANDING_SRC;
+            steve.classList.toggle('steve-sneaking', isSneaking);
+        }
+        function setSneaking(sneaking) {
+            if (!steve || isSneaking === sneaking) return;
+            isSneaking = sneaking;
+            updateSteveSprite();
+        }
+        function setMoving(moving) {
+            if (!steve || isMoving === moving) return;
+            isMoving = moving;
+            if (moving && !sprintInterval) {
+                sprintToggle = true;
+                sprintInterval = setInterval(() => {
+                    if (!isMoving || isSneaking) return;
+                    sprintToggle = !sprintToggle;
+                    updateSteveSprite();
+                }, 100);
+            } else if (!moving && sprintInterval) {
+                clearInterval(sprintInterval);
+                sprintInterval = null;
+                sprintToggle = false;
+            }
+            updateSteveSprite();
+        }
+
+        // 玩家位置用"格"存储，渲染时乘 unitPx（缩放/resize 自动正确）
+        let pux = 0, puy = 0; // 实部 / 虚部（格）
+        let jumpOffset = 0;
+        const pressedKeys = new Set();
+        let facingRight = false;
+        let lastPx = null, lastPy = null, lastJump = null;
+
+        const coordZLine = document.getElementById('coord-z');
+        function updateSteveCoordLabel() {
+            if (!coordZLine) return;
+            const real = Math.round(pux);
+            const imag = Math.round(puy);
+            if (real === 0 && imag === 0) {
+                coordZLine.textContent = 'z = 0';
+                return;
+            }
+            const r = Math.round(Math.hypot(real, imag));
+            let theta = Math.atan2(imag, real);
+            if (theta < 0) theta += Math.PI * 2;
+            coordZLine.textContent = `z = ${r}cis(${theta.toFixed(2)})`;
+        }
+
+        function updateStevePosition() {
+            if (!steve) return;
+            const px = pux * unitPx;
+            const py = -puy * unitPx + jumpOffset;
+            const flip = facingRight ? ' scaleX(-1)' : '';
+            const transform = `translate(calc(-50% + ${px}px), ${py}px)${flip}`;
+            steve.style.transform = transform;
+            if (steveRun) steveRun.style.transform = transform;
+            updateSteveCoordLabel();
+            if (px !== lastPx || py !== lastPy || jumpOffset !== lastJump) {
+                followSteveIntoView();
+            }
+            lastPx = px; lastPy = py; lastJump = jumpOffset;
+        }
+
+        function playOneTimeJump() {
+            const peakHeight = unitPx * 1.1;
+            const timeToPeak = 0.225;
+            const gravity = (2 * peakHeight) / (timeToPeak * timeToPeak);
+            const initialVelocity = gravity * timeToPeak;
+            const start = performance.now();
+            function step(now) {
+                const t = (now - start) / 1000;
+                const height = initialVelocity * t - 0.5 * gravity * t * t;
+                if (height > 0) {
+                    jumpOffset = -height;
+                    updateStevePosition();
+                    requestAnimationFrame(step);
+                } else {
+                    jumpOffset = 0;
+                    updateStevePosition();
+                }
+            }
+            requestAnimationFrame(step);
+        }
+
+        // 玩家限制在中央 40% 区域，碰到界线就以 1:1 同速滚动页面
+        const EDGE = 0.3;
+        function followSteveIntoView() {
+            if (!steve || !numberLineWrap) return;
+            const steveRect = steve.getBoundingClientRect();
+            const wrapRect = numberLineWrap.getBoundingClientRect();
+            const marginX = numberLineWrap.clientWidth * EDGE;
+            const leftLimit = wrapRect.left + marginX;
+            const rightLimit = wrapRect.left + numberLineWrap.clientWidth - marginX;
+            if (steveRect.left < leftLimit) {
+                numberLineWrap.scrollLeft -= leftLimit - steveRect.left;
+            } else if (steveRect.right > rightLimit) {
+                numberLineWrap.scrollLeft += steveRect.right - rightLimit;
+            }
+            const marginY = window.innerHeight * EDGE;
+            if (steveRect.top < marginY) {
+                window.scrollBy(0, steveRect.top - marginY);
+            } else if (steveRect.bottom > window.innerHeight - marginY) {
+                window.scrollBy(0, steveRect.bottom - (window.innerHeight - marginY));
+            }
+        }
+
+        // ================= 开场：Welcome 横幅 3s → 画面缩放到 50 格视角 =================
+        let introDone = false;
+        const levelBanner = document.getElementById('level-banner');
+
+        function introTargetScale() {
+            // 放大目标：横向 -25~25（50 格）可见
+            return numberLineWrap.clientWidth / (50 * unitPx);
+        }
+
+        function startIntro() {
+            centerCamera();
+            // 初始缩放：整个 ±100 平面（横向 200 格）一页放得下
+            const s0 = Math.min(
+                numberLineWrap.clientWidth / (AXIS * 2 * unitPx),
+                window.innerHeight / (AXIS * 2 * unitPx)
+            );
+            world.style.transition = 'none';
+            world.style.transform = `scale(${s0})`;
+            void world.offsetWidth; // 强制 reflow，让初始 scale 立即生效
+            world.style.transition = '';
+
+            requestAnimationFrame(() => levelBanner.classList.add('show'));
+            setTimeout(() => {
+                levelBanner.classList.remove('show');
+                setTimeout(() => {
+                    // 放大画面：视角收缩到 -50~50
+                    world.style.transform = `scale(${introTargetScale()})`;
+                    setTimeout(() => {
+                        world.style.transition = 'none';
+                        introDone = true;
+                        levelBanner.textContent = 'Defeat the Ender Dragon!';
+                        levelBanner.classList.add('show');
+                        setTimeout(() => levelBanner.classList.remove('show'), 3000);
+                    }, 2600);
+                }, 450);
+            }, 3000);
+        }
+
+        window.addEventListener('resize', () => {
+            unitPx = window.innerWidth * UNIT_VW / 100;
+            applyWorldSize();
+            if (!introDone) {
+                const s0 = Math.min(
+                    numberLineWrap.clientWidth / (AXIS * 2 * unitPx),
+                    window.innerHeight / (AXIS * 2 * unitPx)
+                );
+                world.style.transition = 'none';
+                world.style.transform = `scale(${s0})`;
+            } else {
+                applyWorldZoom();
+            }
+            centerCamera();
+        });
+
+        // ================= 末影龙 =================
+        const dragonSprite = document.getElementById('dragon-sprite');
+        const dragonImg = document.getElementById('dragon-img');
+        const dragonLabel = document.getElementById('dragon-label');
+        const dragonRLabel = document.getElementById('dragon-r');
+        const dragonExp = document.getElementById('dragon-exp');
+        const bossProgress = document.getElementById('boss-progress');
+
+        let dragonAlive = true;
+        let dragonHP = DRAGON_HP_MAX;
+        let dragonR = 30;           // 初始飞行半径 r=30
+        let dragonTheta = 0;        // 初始角度 0
+        let radiusTimer = 0;        // 每 15s 判定一次半径变化
+        const DRAGON_OMEGA = Math.PI * 2 / 30000; // 匀速：30s 一圈（rad/ms）
+
+        function updateBossBar() {
+            const hp = Math.max(0, Math.min(DRAGON_HP_MAX, dragonHP));
+            bossProgress.style.clipPath = `inset(0 ${100 - hp}% 0 0)`;
+        }
+        function crystalsRemaining() {
+            return crystals.some((c) => !c.destroyed);
+        }
+
+        function updateDragon(dt) {
+            if (!dragonAlive) return;
+            dragonTheta += DRAGON_OMEGA * dt;
+            dragonTheta %= Math.PI * 2; // 保持 0~2π（约 0~6.28），不无限累加
+            radiusTimer += dt;
+            if (radiusTimer >= 15000) {
+                radiusTimer -= 15000;
+                if (Math.random() < 0.4) {
+                    const dir = Math.random() < 0.5 ? -5 : 5;
+                    dragonR = Math.max(15, Math.min(60, dragonR + dir));
+                }
+            }
+            // 未全部摧毁水晶：每秒回 2 血
+            if (crystalsRemaining() && dragonHP < DRAGON_HP_MAX) {
+                dragonHP = Math.min(DRAGON_HP_MAX, dragonHP + 2 * dt / 1000);
+                updateBossBar();
+            }
+            renderDragon();
+        }
+
+        let lastDragonPx = null;
+        function renderDragon() {
+            const dxu = dragonR * Math.cos(dragonTheta);
+            const dyu = dragonR * Math.sin(dragonTheta);
+            const px = dxu * unitPx;
+            const py = -dyu * unitPx;
+            dragonSprite.style.transform = `translate(calc(-50% + ${px}px), calc(-50% + ${py}px))`;
+            const lift = unitPx * 12; // 标签靠在龙头上方（龙高 24 格，半高 12 格）
+            dragonLabel.style.transform = `translate(calc(-50% + ${px}px), calc(-100% + ${py - lift}px + 115vh))`;
+            // 朝向：gif 默认朝左，向右飞时水平翻转
+            if (lastDragonPx !== null) {
+                const dx = px - lastDragonPx;
+                if (dx > 0.15) dragonImg.classList.add('flip');
+                else if (dx < -0.15) dragonImg.classList.remove('flip');
+            }
+            lastDragonPx = px;
+            // 指数式 re^iθ：θ 为弧度数值（不带 π）
+            let th = dragonTheta % (Math.PI * 2);
+            if (th < 0) th += Math.PI * 2;
+            dragonRLabel.textContent = Math.round(dragonR);
+            dragonExp.textContent = 'i(' + th.toFixed(2) + ')';
+        }
+
+        function killDragon() {
+            dragonAlive = false;
+            dragonSprite.classList.add('dead');
+            dragonLabel.classList.add('dead');
+            activatePortal();
+            showToast(advTheEnd);
+        }
+
+        // ================= 箭矢（平抛轨迹 + 靠近落点减速） =================
+        const arrows = [];
+        function fireArrow(txu, tyu) {
+            const el = document.createElement('img');
+            el.className = 'arrow-sprite';
+            el.src = 'pngs/Arrow.png';
+            el.alt = '';
+            world.appendChild(el);
+            const dist = Math.hypot(txu - pux, tyu - puy);
+            arrows.push({
+                sxu: pux, syu: puy, txu, tyu,
+                t0: performance.now(),
+                dur: Math.max(300, dist / ARROW_SPEED * 1000),
+                arc: Math.max(2, Math.min(10, dist / 6)), // 抛物线拱高（格）
+                el, landed: false, landAt: 0, fading: false, done: false,
+            });
+        }
+
+        function arrowPosAt(a, p) {
+            const eased = 1 - (1 - p) * (1 - p); // 靠近落点减速
+            const x = a.sxu + (a.txu - a.sxu) * eased;
+            const y = a.syu + (a.tyu - a.syu) * eased - a.arc * 4 * p * (1 - p); // 平抛抛物线
+            return [x, y];
+        }
+
+        function updateArrows(now) {
+            for (const a of arrows) {
+                if (a.done) continue;
+                if (!a.landed) {
+                    const p = Math.min((now - a.t0) / a.dur, 1);
+                    const [x, y] = arrowPosAt(a, p);
+                    // 朝向 = 速度方向（Arrow.png 自然指向右上约 -37°）
+                    const [x2, y2] = arrowPosAt(a, Math.min(p + 0.02, 1));
+                    const ang = Math.atan2(-(y2 - y), x2 - x) * 180 / Math.PI;
+                    const px = x * unitPx, py = -y * unitPx;
+                    a.el.style.transform = `translate(calc(-50% + ${px}px), calc(-50% + ${py}px)) rotate(${(ang + 37).toFixed(1)}deg)`;
+                    if (p >= 1) {
+                        a.landed = true;
+                        a.landAt = now;
+                        resolveArrowHit(a.txu, a.tyu);
+                    }
+                } else if (!a.fading && now - a.landAt >= 3000) {
+                    a.fading = true;
+                    a.el.classList.add('fade'); // 落地等待 3s 后淡出
+                } else if (a.fading && now - a.landAt >= 3500) {
+                    a.el.remove();
+                    a.done = true;
+                }
+            }
+        }
+
+        function resolveArrowHit(txu, tyu) {
+            // 先判水晶（方圆 1 格），再判末影龙
+            for (const c of crystals) {
+                if (c.destroyed) continue;
+                if (Math.hypot(txu - c.xu, tyu - c.yu) <= CRYSTAL_HIT_R) {
+                    destroyCrystal(c);
+                    checkFail();
+                    return;
+                }
+            }
+            if (dragonAlive) {
+                const dxu = dragonR * Math.cos(dragonTheta);
+                const dyu = dragonR * Math.sin(dragonTheta);
+                if (Math.hypot(txu - dxu, tyu - dyu) <= DRAGON_HIT_R) {
+                    hitDragon();
+                }
+            }
+            checkFail();
+        }
+
+        // ================= 首次命中 → Take Aim / Hints =================
+        const advTakeAim = document.getElementById('advancement-takeaim');
+        const advTheEnd = document.getElementById('advancement-theend');
+        const hintsToast = document.getElementById('hints-toast');
+        let firstHitDone = false;
+        let hintsTimer = null;
+        let advTimerAim = null;
+        let advTimerEnd = null;
+
+        function showToast(el, ms) {
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), ms);
+        }
+        function onFirstHit(kind) {
+            if (firstHitDone) return;
+            firstHitDone = true;
+            if (advTimerAim) clearTimeout(advTimerAim);
+            advTakeAim.classList.add('show');
+            advTimerAim = setTimeout(() => advTakeAim.classList.remove('show'), 3000);
+            // 首次命中是末影龙（而非水晶）→ 弹出 Hints
+            if (kind === 'dragon') {
+                if (hintsTimer) clearTimeout(hintsTimer);
+                hintsToast.classList.add('show');
+                hintsTimer = setTimeout(() => hintsToast.classList.remove('show'), 4500);
+            }
+        }
+
+        function destroyCrystal(c) {
+            c.destroyed = true;
+            if (c.el) {
+                c.el.classList.add('boom'); // 爆炸：放大 + 淡出
+                setTimeout(() => { c.el.style.visibility = 'hidden'; }, 450);
+            } else {
+                // caged 黑曜石柱：打碎后直接换成普通黑曜石柱（去掉笼子）
+                c.spike.src = 'pngs/endspike.png';
+            }
+            refreshMap();
+            onFirstHit('crystal');
+            if (c.deg === 180) startQuizFlow(); // 打碎 -64 水晶 → 放大并触发解方程
+        }
+
+        function hitDragon() {
+            dragonHP = Math.max(0, dragonHP - 25);
+            updateBossBar();
+            onFirstHit('dragon');
+            if (dragonHP <= 0) killDragon();
+        }
+
+        // ================= 弩箭（槽位 1） =================
+        const hotbar = document.getElementById('hotbar');
+        const slotEls = [];
+        let selectedSlot = null;
+        let shotsFired = 0;
+        let crossbowLoaded = true;
+        let crossbowRefilling = false;
+
+        const crossbowImg = document.createElement('img');
+        crossbowImg.className = 'slot-item crossbow-in-slot';
+        crossbowImg.src = 'pngs/Crossbow_Loaded.png';
+        crossbowImg.alt = 'Crossbow';
+        const durabilityBar = document.createElement('div');
+        durabilityBar.className = 'durability-bar'; // lv6：首次使用后才显示
+        const durabilityBg = document.createElement('img');
+        durabilityBg.src = 'pngs/green_background.png';
+        durabilityBg.alt = '';
+        const durabilityProgress = document.createElement('img');
+        durabilityProgress.src = 'pngs/green_progress.png';
+        durabilityProgress.alt = '';
+        durabilityBar.appendChild(durabilityBg);
+        durabilityBar.appendChild(durabilityProgress);
+
+        const mapInSlot = document.createElement('img');
+        mapInSlot.className = 'slot-item map-in-slot';
+        mapInSlot.src = 'pngs/Map_Icon.png';
+        mapInSlot.alt = 'Map';
+
+        for (let i = 0; i < 9; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'hotbar-slot';
+            const baseImg = document.createElement('img');
+            baseImg.src = 'pngs/hotbar_offhand_right.png';
+            baseImg.alt = '';
+            slot.appendChild(baseImg);
+            if (i === 0) { slot.appendChild(crossbowImg); slot.appendChild(durabilityBar); }
+            if (i === 1) slot.appendChild(mapInSlot);
+            const selImg = document.createElement('img');
+            selImg.className = 'slot-selection';
+            selImg.src = 'pngs/hotbar_selection.png';
+            selImg.alt = '';
+            slot.appendChild(selImg);
+            slot.addEventListener('click', (event) => {
+                event.stopPropagation();
+                setSelectedSlot(selectedSlot === i ? null : i);
+            });
+            hotbar.appendChild(slot);
+            slotEls.push(slot);
+        }
+
+        function setSelectedSlot(idx) {
+            selectedSlot = idx;
+            slotEls.forEach((el, i) => el.classList.toggle('selected', i === idx));
+            mapOverlay.classList.toggle('show', idx === 1); // 选中地图时展示地图
+        }
+
+        function updateDurabilityBar() {
+            durabilityProgress.style.width = Math.max(0, (CROSSBOW_MAX - shotsFired) / CROSSBOW_MAX * 100) + '%';
+        }
+
+        // 使用弩箭：消耗 1 次 → Empty → 0.2s/张依次播放 Pull_0/1/2 → Loaded（停住）
+        function consumeCrossbow() {
+            shotsFired += 1;
+            updateDurabilityBar();
+            durabilityBar.classList.add('show');
+            crossbowLoaded = false;
+            crossbowRefilling = true;
+            crossbowImg.src = 'pngs/Crossbow_Empty.png';
+            setTimeout(() => { crossbowImg.src = 'pngs/Crossbow_Pull_0.png'; }, 200);
+            setTimeout(() => { crossbowImg.src = 'pngs/Crossbow_Pull_1.png'; }, 400);
+            setTimeout(() => { crossbowImg.src = 'pngs/Crossbow_Pull_2.png'; }, 600);
+            setTimeout(() => {
+                crossbowImg.src = 'pngs/Crossbow_Loaded.png';
+                crossbowRefilling = false;
+                crossbowLoaded = true;
+            }, 800);
+        }
+
+        // ================= 瞄准弹窗：rcis(a/b pi) 或 rcis(theta deg) =================
+        const aimModal = document.getElementById('aim-modal');
+        const aimInput = document.getElementById('aim-input');
+        const aimConfirm = document.getElementById('aim-confirm');
+        let aimWrong = false;
+
+        function tryOpenAim() {
+            if (!introDone || hasWon || hasFailed) return;
+            if (!crossbowLoaded || crossbowRefilling) return;
+            if (quizModal.classList.contains('show') || aimModal.classList.contains('show')) return;
+            aimInput.value = '';
+            aimInput.classList.remove('wrong');
+            aimWrong = false;
+            aimModal.classList.add('show');
+            setTimeout(() => aimInput.focus(), 50);
+        }
+        function closeAimModal() {
+            aimModal.classList.remove('show');
+        }
+        function clearAimWrong(keepText) {
+            if (!aimWrong) return;
+            aimWrong = false;
+            if (!keepText) aimInput.value = '';
+            aimInput.classList.remove('wrong');
+        }
+        aimInput.addEventListener('mousedown', () => clearAimWrong(false));
+        aimInput.addEventListener('focus', () => clearAimWrong(false));
+        aimInput.addEventListener('input', () => clearAimWrong(true));
+        aimInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') submitAim();
+            if (event.key === 'Escape') closeAimModal();
+        });
+        aimConfirm.addEventListener('click', submitAim);
+        // Esc 全局退出瞄准弹窗（即使输入框失焦也能关闭）
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && aimModal.classList.contains('show')) closeAimModal();
+        });
+
+        function parseAim(raw) {
+            // 弧度制·分数（pi）：64cis(1/4 pi)
+            let m = raw.match(/^(\d*\.?\d+)\s*cis\s*\(\s*(-?\d+)\s*\/\s*(\d+)\s*(?:pi|π)\s*\)$/i);
+            if (m) {
+                return [parseFloat(m[1]), (parseInt(m[2], 10) / parseInt(m[3], 10)) * Math.PI];
+            }
+            // 弧度制·小数（pi）：64cis(0.25 pi)
+            m = raw.match(/^(\d*\.?\d+)\s*cis\s*\(\s*(-?\d*\.?\d+)\s*(?:pi|π)\s*\)$/i);
+            if (m) {
+                return [parseFloat(m[1]), parseFloat(m[2]) * Math.PI];
+            }
+            // 角度制·带单位：64cis(45 deg) / 64cis(45°)
+            m = raw.match(/^(\d*\.?\d+)\s*cis\s*\(\s*(-?\d*\.?\d+)\s*(?:deg|°)\s*\)$/i);
+            if (m) {
+                return [parseFloat(m[1]), parseFloat(m[2]) * Math.PI / 180];
+            }
+            // 角度制·纯数字：64cis(45) 视为角度
+            m = raw.match(/^(\d*\.?\d+)\s*cis\s*\(\s*(-?\d*\.?\d+)\s*\)$/i);
+            if (m) {
+                return [parseFloat(m[1]), parseFloat(m[2]) * Math.PI / 180];
+            }
+            return null;
+        }
+
+        function submitAim() {
+            if (!aimModal.classList.contains('show')) return;
+            const parsed = parseAim(aimInput.value.trim());
+            if (!parsed) { markAimWrong(); return; }
+            let [r, theta] = parsed;
+            theta = ((theta % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+            r = Math.max(0, Math.min(AXIS, r)); // 落点钳制在世界范围内
+            closeAimModal();
+            consumeCrossbow();
+            fireArrow(r * Math.cos(theta), r * Math.sin(theta));
+        }
+        function markAimWrong() {
+            aimWrong = true;
+            aimInput.classList.add('wrong');
+            aimInput.value = 'WRONG ANSWER.';
+            aimInput.select();
+        }
+
+        // 60 支箭用完仍末影龙未归零 → 失败
+        function checkFail() {
+            if (hasWon || hasFailed) return;
+            if (dragonAlive && shotsFired >= CROSSBOW_MAX) showFailOverlay();
+        }
+
+        // ================= 答题（击中 -64 水晶触发）：z^4=64cis pi 四个根 =================
+        const quizModal = document.getElementById('quiz-modal');
+        const quizInput = document.getElementById('quiz-input');
+        const quizConfirm = document.getElementById('quiz-confirm');
+        const ROOTS = [0.25, 0.75, 1.25, 1.75]; // θ/π（mod 2）
+        const R_EXPECT = 2.83;
+        let remainingRoots = ROOTS.slice();
+        let wrongState = false;
+
+        function openQuizModal() {
+            quizInput.value = '';
+            quizInput.classList.remove('wrong');
+            wrongState = false;
+            quizModal.classList.add('show');
+            setTimeout(() => quizInput.focus(), 50);
+        }
+        function clearWrongState(keepText) {
+            if (!wrongState) return;
+            wrongState = false;
+            if (!keepText) quizInput.value = '';
+            quizInput.classList.remove('wrong');
+        }
+        quizInput.addEventListener('mousedown', () => clearWrongState(false));
+        quizInput.addEventListener('focus', () => clearWrongState(false));
+        quizInput.addEventListener('input', () => clearWrongState(true));
+        quizInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') submitAnswer();
+        });
+        quizConfirm.addEventListener('click', submitAnswer);
+
+        let quizFlowStarted = false;
+        function startQuizFlow() {
+            if (quizFlowStarted) return;
+            quizFlowStarted = true;
+            // 先让原点居中，再放大到只显示 -10~10（20 格宽），等动画结束再弹 z^4=64 弹窗
+            centerCamera();
+            const s = numberLineWrap.clientWidth / (20 * unitPx);
+            world.style.transition = '';
+            world.style.transform = `scale(${s})`;
+            setTimeout(() => {
+                world.style.transition = 'none';
+                centerCamera();
+                openQuizModal();
+            }, 2600);
+        }
+
+        // 平滑缩放世界（放大/缩小共用），动画结束后关闭过渡，避免影响用户滚轮缩放
+        function zoomWorldTo(scaleValue, durationMs = 2500, after = null) {
+            centerCamera();
+            world.style.transition = `transform ${durationMs}ms cubic-bezier(0.45,0.05,0.35,1)`;
+            world.style.transform = `scale(${scaleValue})`;
+            setTimeout(() => {
+                world.style.transition = 'none';
+                centerCamera();
+                if (after) after();
+            }, durationMs);
+        }
+
+        function submitAnswer() {
+            if (!quizModal.classList.contains('show')) return;
+            const raw = quizInput.value.trim();
+            const match = raw.match(/^([0-9]*\.?[0-9]+)\s*cis\s*\(\s*(-?\d+)\s*\/\s*(\d+)\s*(?:pi|π)\s*\)$/i);
+            if (!match) { markWrong(); return; }
+            const r = parseFloat(match[1]);
+            const frac = parseInt(match[2], 10) / parseInt(match[3], 10);
+            if (Math.abs(r - R_EXPECT) > 0.005) { markWrong(); return; }
+            const norm = ((frac % 2) + 2) % 2;
+            const idx = remainingRoots.findIndex((v) => Math.abs(v - norm) < 1e-6);
+            if (idx === -1) { markWrong(); return; }
+            remainingRoots.splice(idx, 1);
+            quizModal.classList.remove('show');
+            spawnBedrock(norm);
+            if (remainingRoots.length > 0) {
+                setTimeout(openQuizModal, 300);
+            } else {
+                setTimeout(spawnPortalFrame, 300); // 四根集齐 → 一圈 bedrock
+            }
+        }
+
+        function markWrong() {
+            wrongState = true;
+            quizInput.classList.add('wrong');
+            quizInput.value = 'WRONG ANSWER.';
+            quizInput.select();
+        }
+
+        function spawnBedrock(thetaOverPi) {
+            const bedrock = document.createElement('img');
+            bedrock.className = 'bedrock-sprite';
+            bedrock.src = 'pngs/bedrock.png';
+            bedrock.alt = 'Root';
+            const x = R_EXPECT * Math.cos(thetaOverPi * Math.PI);
+            const y = R_EXPECT * Math.sin(thetaOverPi * Math.PI);
+            bedrock.style.transform = `translate(calc(-50% + var(--imaginary-unit) * ${x.toFixed(3)}), calc(50% - var(--imaginary-unit) * ${y.toFixed(3)}))`;
+            world.appendChild(bedrock);
+            requestAnimationFrame(() => bedrock.classList.add('revealed'));
+        }
+
+        // 一圈 bedrock：直边距圆心 3、同边间距 1（中心都在整数坐标上），逆时针逐个出现
+        function spawnPortalFrame() {
+            const frameSpots = [
+                [3, -1], [3, 0], [3, 1],
+                [1, 3], [0, 3], [-1, 3],
+                [-3, 1], [-3, 0], [-3, -1],
+                [-1, -3], [0, -3], [1, -3],
+                [0, 0],
+            ];
+            frameSpots.forEach(([x, y], i) => {
+                setTimeout(() => {
+                    const block = document.createElement('img');
+                    block.className = 'bedrock-sprite';
+                    block.src = 'pngs/bedrock.png';
+                    block.alt = '';
+                    block.style.transform = `translate(calc(-50% + var(--imaginary-unit) * ${x}), calc(50% - var(--imaginary-unit) * ${y}))`;
+                    world.appendChild(block);
+                    requestAnimationFrame(() => block.classList.add('revealed'));
+                }, i * 400);
+            });
+            // 一圈 bedrock 全部出现后 → 视角拉回 -25~25
+            setTimeout(() => zoomWorldTo(introTargetScale()), frameSpots.length * 400 + 200);
+        }
+
+        // ================= endportal：龙血归零激活，站入 1.5s 通关 =================
+        const endportal = document.getElementById('endportal');
+        const winOverlay = document.getElementById('win-overlay');
+        const endPoem = document.getElementById('end-poem');
+        const endPoemScroll = document.getElementById('end-poem-scroll');
+        const winBackBtn = document.getElementById('win-back-btn');
+        const failOverlay = document.getElementById('fail-overlay');
+        const failBackBtn = document.getElementById('fail-back-btn');
+        let portalActive = false;
+        let hasWon = false;
+        let hasFailed = false;
+        let winShown = false;
+        let portalDwellStart = null;
+
+        function activatePortal() {
+            if (portalActive) return;
+            portalActive = true;
+            endportal.classList.add('revealed');
+            // 传送门淡入出现后 → 视角聚焦到 -10~10
+            setTimeout(() => zoomWorldTo(numberLineWrap.clientWidth / (20 * unitPx)), 500);
+        }
+
+        function checkPortalCollision() {
+            if (!portalActive || hasWon || !steve || !endportal) return;
+            const s = steve.getBoundingClientRect();
+            const p = endportal.getBoundingClientRect();
+            const insetX = p.width * 0.05;
+            const insetY = p.height * 0.05;
+            const cx = s.left + s.width / 2;
+            const cy = s.top + s.height / 2;
+            const inCenter = (
+                cx >= p.left + insetX && cx <= p.right - insetX &&
+                cy >= p.top + insetY && cy <= p.bottom - insetY
+            );
+            if (!inCenter) {
+                portalDwellStart = null;
+                return;
+            }
+            if (portalDwellStart === null) portalDwellStart = performance.now();
+            if (performance.now() - portalDwellStart >= 2000) showEndPoem();
+        }
+
+        function showFailOverlay() {
+            if (hasFailed || hasWon) return;
+            hasFailed = true;
+            failOverlay.classList.add('show');
+        }
+
+        function showWinOverlay() {
+            if (winShown || hasFailed) return;
+            winShown = true;
+            persistLevel6Passed();
+            winOverlay.classList.add('show');
+            startFormulaFountain();
+        }
+
+        // ================= 终末之诗（通关后滚动字幕） =================
+        let poemShown = false;
+        // 每行：[颜色, 文本]；'g'=绿色，'c'=青色，文本为 null 表示用户 ID 占位
+        const END_POEM_LINES = [
+            ['g', 'I see the player you mean.'],
+            ['c', null],
+            ['g', 'Yes. I like this player. It played well. It did not give up.'],
+            ['c', 'It tumbled into the universe of maths. It kept falling. It immersed itself deep in the world.'],
+            ['c', 'In that world, it met millions of pieces of pure love for maths.'],
+            ['g', "The player had a long dream. In its dream, it was born on a number axis. It jumped. A brand new world emerged in its sight. In that world, it encountered something it's never seen before."],
+            ['g', 'In its dream, direction had a measure. It walked as it drunk until a secret was found.'],
+            ['g', 'In its dream, sine and cosine were friends. They played with i and chased the e. De movire saw their way, taught them a trick to be quick.'],
+            ['c', 'Sometimes the player dreamed of being a human, on the broiling crust. It squatted down, observing the fissure, seeking for the deepest arcanum of the planet. That planet circled a ball of blazing gas. They were so far apart that light took eight minutes to reach the planet.'],
+            ['c', 'Sometimes the player dreamed of being an imaginary number, existing only in a virtual world. But there, in the complex plane, it can move and jump.'],
+            ['c', "Sometimes the player dreamed of being a mathematician, figuring out that, what if under the square root, there was a negative number. It ultimately unlocked another world beyond reality."],
+            ['g', 'Hah, the original interface. Five thousand years old, and it still works. But what true knowledge did this player learn, in the reality behind the screen?'],
+            ['g', 'It worked, with a billion others, to sculpt a complex world in a fold of the ...∫ √ ∞ , and created a ∆ ∅ ≠ ± for  ≤ ≥ ≠  in the  × ÷ ∞ ≈ § ● ○ ▲.'],
+            ['c', 'It cannot read that.'],
+            ['g', 'No. It has not yet achieved the highest level. That, it must achieve in the long dream of mathematical world, not the short dream of a game.'],
+            ['c', "It takes it a long journey to arrive there. It must fight till the End."],
+            ['g', 'And the game was over and the player woke up from the dream. And the player began a new dream. And the player dreamed again, dreamed better. And the player was the universe. And the player was love.'],
+            ['g', 'You are the player.'],
+            ['c', 'Wake up.'],
+        ];
+        function buildEndPoem() {
+            endPoemScroll.innerHTML = '';
+            const title = document.createElement('h1');
+            title.className = 'end-poem-title';
+            title.textContent = 'COMPLEX NUMBERS';
+            endPoemScroll.appendChild(title);
+            const uid = currentDisplayUserId || 'Player';
+            END_POEM_LINES.forEach(([color, text]) => {
+                const line = document.createElement('div');
+                line.className = 'end-poem-line' + (color === 'c' ? ' cyan' : '');
+                line.textContent = text === null ? uid + '?' : text;
+                endPoemScroll.appendChild(line);
+            });
+        }
+        function showEndPoem() {
+            if (poemShown || hasFailed) return;
+            poemShown = true;
+            hasWon = true; // 锁定游戏输入
+            buildEndPoem();
+            endPoem.classList.add('show');
+        }
+        function finishPoem() {
+            if (endPoem.classList.contains('fade-out')) return;
+            endPoem.classList.add('fade-out');
+            setTimeout(() => {
+                endPoem.classList.remove('show');
+                endPoem.classList.remove('fade-out');
+                showWinOverlay();
+            }, 400);
+        }
+        if (endPoemScroll) {
+            endPoemScroll.addEventListener('animationend', (event) => {
+                if (event.animationName === 'endpoem-scroll') finishPoem();
+            });
+        }
+
+        // 通关画面：复数公式（小字）从页面中心不断飞出，不覆盖文字与按钮（z 更低）
+        const formulaLayer = document.getElementById('formula-layer');
+        let formulaTimer = null;
+        let formulaIndex = 0;
+        // wiki 里出现过的所有公式（转为可读文本，按顺序循环飞出）
+        const WIN_FORMULAS = [
+            "z = a + bi  (a, b real)",
+            "z* = a - bi",
+            "z · z* = a^2 + b^2",
+            "1/z = (a - bi)/(a^2 + b^2)",
+            "z1* + z2* = (z1 + z2)*",
+            "z1* - z2* = (z1 - z2)*",
+            "z1* · z2* = (z1 · z2)*",
+            "z1*/z2* = (z1/z2)*",
+            "(a + bi) + (c + di) = (a + c) + i(b + d)",
+            "(a + bi) - (c + di) = (a - c) + i(b - d)",
+            "(a + bi)(c + di) = (ac - bd) + i(ad + bc)",
+            "(a + bi)/(c + di) = (ac + bd)/(c^2 + d^2) + i(bc - ad)/(c^2 + d^2)",
+            "r = |z| = sqrt(a^2 + b^2)",
+            "tan θ = b/a",
+            "|z1| + |z2| ≥ |z1 + z2|",
+            "θ = tan^-1 |b/a|",
+            "z = r(cos θ + i sin θ) = r cis θ",
+            "x = r cos θ",
+            "y = r sin θ",
+            "e^(iθ) = cos θ + i sin θ",
+            "e^(iθ) = cis θ",
+            "z1 · z2 = r1 r2 (cos(θ1 + θ2) + i sin(θ1 + θ2))",
+            "z1/z2 = (r1/r2)(cos(θ1 - θ2) + i sin(θ1 - θ2))",
+            "(cos x + i sin x)^n = cos nx + i sin nx",
+            "z^n = r^n (cos nθ + i sin nθ)",
+            "zk = r^(1/n)(cos((θ + 2πk)/n) + i sin((θ + 2πk)/n))"
+        ];
+        function startFormulaFountain() {
+            if (formulaTimer) return;
+            formulaTimer = setInterval(() => {
+                const s = document.createElement('span');
+                s.className = 'formula-fly';
+                s.textContent = WIN_FORMULAS[formulaIndex % WIN_FORMULAS.length];
+                formulaIndex += 1;
+                // 终点飞越屏幕边缘：横轴 ±70vw、纵轴 ±70vh（直接飞出屏幕）
+                const fx = ((Math.random() * 2 - 1) * 70).toFixed(1) + 'vw';
+                const fy = ((Math.random() * 2 - 1) * 70).toFixed(1) + 'vh';
+                s.style.setProperty('--fx', fx);
+                s.style.setProperty('--fy', fy);
+                formulaLayer.appendChild(s);
+                requestAnimationFrame(() => requestAnimationFrame(() => s.classList.add('go')));
+                s.addEventListener('animationend', () => s.remove());
+                setTimeout(() => s.remove(), 2400); // 兜底清理
+            }, 220);
+        }
+
+        if (winBackBtn) {
+            winBackBtn.addEventListener('click', () => {
+                sessionStorage.setItem('open_game_page', 'true');
+                window.location.href = 'index.html';
+            });
+        }
+        if (failBackBtn) {
+            failBackBtn.addEventListener('click', () => {
+                sessionStorage.setItem('open_game_page', 'true');
+                window.location.href = 'index.html';
+            });
+        }
+
+        // ================= Supabase 存档（与 level1-5 一致） =================
+        const supabaseClient = window.supabase
+            ? window.supabase.createClient(
+                "https://mrhcdtaqeintpeoeknlq.supabase.co",
+                "sb_publishable_8sB8D4RFrbLVYffhSkqqVQ_XrJdrG0E"
+            )
+            : null;
+        let currentUserId = null;
+        let currentDisplayUserId = null;
+        (async () => {
+            if (!supabaseClient) return;
+            const { data, error } = await supabaseClient.auth.getSession();
+            if (!error && data && data.session && data.session.user) {
+                currentUserId = data.session.user.id;
+                currentDisplayUserId = data.session.user.user_metadata?.user_id || data.session.user.id;
+            }
+        })();
+        async function persistLevel6Passed() {
+            localStorage.setItem('level6_passed', 'true');
+            if (!supabaseClient || !currentUserId) return;
+            const { error } = await supabaseClient
+                .from('app_state')
+                .upsert({ key: `${currentUserId}:level6_passed`, value: true, updated_at: new Date().toISOString() });
+            if (error) console.error('Failed to save Level 6 completion:', error);
+        }
+
+        // ================= 键盘 =================
+        function modalOpen() {
+            return quizModal.classList.contains('show') || aimModal.classList.contains('show');
+        }
+
+        // ===== 键盘方向键平滑滚动 + 用户缩放 =====
+        let scrollDirX = 0;                    // 左右方向（-1/0/1）
+        const KEY_SCROLL_SPEED = 0.4;          // px/ms：按住方向键的平滑滚动速度
+        let userZoom = 1;                      // 用户缩放倍数（1 = 默认 -50~50 视角）
+        let zoomDirty = false;                 // 缩放待应用到世界 transform（rAF 合并，避免一帧多次写）
+        let zoomAnchor = null;                 // 缩放锚点（视口坐标），用于以鼠标为中心缩放
+        const ZOOM_MIN = 0.3, ZOOM_MAX = 6;
+        function applyWorldZoom(anchor) {
+            if (!introDone) return;
+            let rectBefore = null, s0 = 1;
+            if (anchor) {
+                rectBefore = world.getBoundingClientRect();
+                s0 = world.clientWidth > 0 ? rectBefore.width / world.clientWidth : 1;
+            }
+            const s1 = introTargetScale() * userZoom;
+            world.style.transform = `scale(${s1})`;
+            if (!anchor || !rectBefore) return;
+            // 以鼠标为中心：缩放前后保持鼠标下的世界点位置不变，补偿滚动偏移
+            const ox = rectBefore.left + rectBefore.width / 2;
+            const oy = rectBefore.top + rectBefore.height / 2;
+            const worldX = (anchor.x - ox) / s0;
+            const worldY = (anchor.y - oy) / s0;
+            numberLineWrap.scrollLeft += worldX * (s1 - s0);
+            window.scrollBy(0, worldY * (s1 - s0));
+        }
+        window.addEventListener('keydown', (event) => {
+            if (modalOpen() || hasWon || hasFailed) return;
+            const key = event.key.toLowerCase();
+            if (key === 'a' || key === 'd' || key === 'w' || key === 's') {
+                pressedKeys.add(key);
+                if (key === 'a' || key === 'd') {
+                    setMoving(true); // 走路动画只跟左右移动有关
+                    if (key === 'a') facingRight = false;
+                    else facingRight = true;
+                }
+            }
+            if (event.key === 'Shift') setSneaking(true);
+            // 方向键左右滚动地图视野（交由 rAF 逐帧平滑滚动）
+            if (event.key === 'ArrowLeft') {
+                scrollDirX = -1;
+                event.preventDefault();
+            } else if (event.key === 'ArrowRight') {
+                scrollDirX = 1;
+                event.preventDefault();
+            }
+            if (event.code === 'Space' || event.key === ' ') {
+                event.preventDefault();
+                if (event.repeat || !introDone) return;
+                playOneTimeJump();
+            }
+            // 数字键 1/2 选择物品栏槽位
+            if (event.key === '1') setSelectedSlot(selectedSlot === 0 ? null : 0);
+            if (event.key === '2') setSelectedSlot(selectedSlot === 1 ? null : 1);
+        });
+        window.addEventListener('keyup', (event) => {
+            const key = event.key.toLowerCase();
+            if (key === 'a' || key === 'd' || key === 'w' || key === 's') {
+                pressedKeys.delete(key);
+                const stillMoving = pressedKeys.has('a') || pressedKeys.has('d');
+                setMoving(stillMoving);
+            }
+            if (event.key === 'Shift') setSneaking(false);
+            if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+                scrollDirX = 0;
+            }
+        });
+
+        // 点击屏幕 = 使用选中的物品（槽位 1 弩箭 → 询问坐标；槽位 2 地图随选中显示）
+        document.addEventListener('click', () => {
+            if (modalOpen() || hasWon || hasFailed) return;
+            if (selectedSlot === 0) tryOpenAim();
+        });
+
+        // ================= 主循环 =================
+        let lastFrameTime = performance.now();
+        function frameLoop(now) {
+            const dt = now - lastFrameTime;
+            lastFrameTime = now;
+
+            // 键盘方向键逐帧平滑滚动地图视野
+            if (scrollDirX !== 0) {
+                numberLineWrap.scrollLeft += scrollDirX * KEY_SCROLL_SPEED * dt;
+            }
+            // 缩放只在每帧应用一次，平滑跟手
+            if (zoomDirty) {
+                zoomDirty = false;
+                applyWorldZoom(zoomAnchor);
+                zoomAnchor = null;
+            }
+
+            // 玩家移动（WASD，限制在半径 55 的圆内）
+            if (introDone && !hasWon && !hasFailed && !modalOpen()) {
+                const step = PLAYER_SPEED * dt;
+                let moved = false;
+                if (pressedKeys.has('a')) { pux -= step; moved = true; }
+                if (pressedKeys.has('d')) { pux += step; moved = true; }
+                if (pressedKeys.has('w')) { puy += step; moved = true; }
+                if (pressedKeys.has('s')) { puy -= step; moved = true; }
+                if (moved) {
+                    const len = Math.hypot(pux, puy);
+                    if (len > PLAY_R) { pux = pux / len * PLAY_R; puy = puy / len * PLAY_R; }
+                    updateStevePosition();
+                }
+            }
+
+            updateDragon(dt);
+            updateArrows(now);
+            checkPortalCollision();
+            requestAnimationFrame(frameLoop);
+        }
+
+        // 触控板捏合 / ctrl+滚轮：缩放游戏世界，而非浏览器页面
+        window.addEventListener('wheel', (event) => {
+            if (!event.ctrlKey) return;
+            event.preventDefault();
+            if (!introDone || hasWon || hasFailed || modalOpen()) return;
+            zoomAnchor = { x: event.clientX, y: event.clientY };
+            userZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, userZoom * Math.exp(-event.deltaY * 0.003)));
+            zoomDirty = true; // 交由主循环统一应用，避免一帧内多次写 transform
+        }, { passive: false });
+
+        // ================= 启动 =================
+        updateBossBar();
+        refreshMap();
+        updateStevePosition();
+        renderDragon();
+        startIntro();
+        requestAnimationFrame(frameLoop);
+    </script>
+</body>
+</html>

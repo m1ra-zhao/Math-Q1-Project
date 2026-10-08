@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Level 5</title>
+    <link rel="stylesheet" href="style.css?v=20261003b">
+</head>
+<body class="level-page level5-page">
+    <div class="level-page-inner">
+        <a class="wiki-back-link" href="index.html">← Back to Home</a>
+        <div id="steve-coord" class="steve-coord-label">
+            <div id="coord-z"></div>
+        </div>
+
+        <div class="number-line-wrap" aria-label="Number line">
+            <div class="number-line">
+                <div class="axis-arrow left"></div>
+                <div class="axis-arrow right"></div>
+                <div class="axis-line"></div>
+                <div class="imaginary-axis imaginary-axis-visible" id="imaginary-axis-pos" aria-label="Positive imaginary axis">
+                    <div class="imaginary-axis-line"></div>
+                    <div id="imaginary-scale" class="imaginary-scale"></div>
+                </div>
+                <div class="imaginary-axis imaginary-axis-neg imaginary-axis-visible" id="imaginary-axis-neg" aria-label="Negative imaginary axis">
+                    <div class="imaginary-axis-line"></div>
+                    <div id="imaginary-scale-neg" class="imaginary-scale"></div>
+                </div>
+                <div id="number-scale" class="number-scale"></div>
+                <!-- 单位圆：半径 1 单位，史蒂夫只能在圆上行走 -->
+                <div id="unit-circle" aria-label="Unit circle"></div>
+                <!-- E：尾随史蒂夫的精灵，开局隐藏，有独立 eThetaRad 状态；到达端点后变成白色的 e^(iπ) / e^(i0) -->
+                <div id="e-sprite" class="e-sprite">
+                    <img src="pngs/E.png" alt="e">
+                    <span class="e-exponent" id="e-exponent"></span>
+                    <span class="e-r-label" id="e-r-label"></span>
+                </div>
+                <!-- End 传送门：E 首次回到 z=-1 或 z=1 时在 E 当前位置生成 -->
+                <img id="end-sprite" class="end-sprite" src="pngs/End.png" alt="End Portal">
+                <img id="steve" class="steve-sprite" src="pngs/Steve_JE5.png.webp" alt="Steve">
+                <img id="steve-run" class="steve-sprite steve-run-img" src="pngs/Sprinting_Steve.png" alt="">
+                <!-- 史蒂夫头顶实时坐标：内容与左上角 z 坐标一致，跟随移动/跳跃 -->
+                <div id="steve-head-label" class="steve-head-label"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tips 弹窗：碰到 E 时左上角弹出 -->
+    <div id="tips-toast" class="system-toast">
+        <img src="pngs/system.png" alt="" class="system-toast-bg">
+        <div class="system-toast-text">
+            <div class="system-toast-line">Tips!</div>
+            <div class="system-toast-line white-line">Catch it!</div>
+        </div>
+    </div>
+
+    <!-- Advancement 弹窗：数轴收起后右上角弹出（左部带 End Stone 图标） -->
+    <div id="advancement-toast" class="advancement-toast with-icon">
+        <img src="pngs/advancement.png" alt="" class="advancement-toast-bg">
+        <img src="pngs/End_Stone_JE3_BE2.png" alt="End Stone" class="advancement-toast-item-icon">
+        <div class="advancement-toast-text">
+            <div class="advancement-line-title">Advancement Made!</div>
+            <div class="advancement-line-body">The End?</div>
+        </div>
+    </div>
+
+    <!-- 平面展开横幅：No treasure found 同款动画（展开瞬间在屏幕中间弹出） -->
+    <div id="expand-banner" class="no-treasure-banner">E duplicated a i, you fell<br>into complex plane.....</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const scale = document.getElementById('number-scale');
+        const imaginaryScale = document.getElementById('imaginary-scale');
+        const imaginaryScaleNeg = document.getElementById('imaginary-scale-neg');
+        const numberLineWrap = document.querySelector('.number-line-wrap');
+        const numberLine = document.querySelector('.number-line');
+        const TAU = Math.PI * 2;
+
+        // 数轴范围 ±20（实部/虚部同），单位长度放大成 level3 的 3 倍
+        const AXIS_RANGE = 20;
+        const INITIAL_NL_WIDTH_VW = 1260; // 3 倍：level3 的 420vw
+        const LEVEL1_NL_WIDTH_VW = 420;
+        let unitPx = numberLine.clientWidth / (AXIS_RANGE * 2);
+        numberLine.style.setProperty('--imaginary-unit', unitPx + 'px');
+
+        // 实轴刻度 -20 ~ 20（每单位一个刻度，5 的倍数带标签）
+        if (scale) {
+            for (let value = -AXIS_RANGE; value <= AXIS_RANGE; value++) {
+                const percent = ((value + AXIS_RANGE) / (AXIS_RANGE * 2)) * 100;
+                const tick = document.createElement('div');
+                tick.className = 'axis-tick';
+                tick.style.left = percent + '%';
+                tick.style.height = (value % 5 === 0 ? 25 : 12) + 'px';
+                scale.appendChild(tick);
+                // 每个刻度都标数字（同 level1）
+                const label = document.createElement('div');
+                label.className = 'axis-label';
+                label.style.left = percent + '%';
+                label.textContent = value;
+                scale.appendChild(label);
+            }
+        }
+
+        // 虚轴刻度 +1i ~ +20i / -1i ~ -20i
+        if (imaginaryScale) {
+            for (let value = 1; value <= AXIS_RANGE; value++) {
+                const tick = document.createElement('div');
+                tick.className = 'imaginary-tick';
+                tick.style.bottom = (value * unitPx - 1) + 'px';
+                imaginaryScale.appendChild(tick);
+                const label = document.createElement('div');
+                label.className = 'imaginary-label';
+                label.style.bottom = (value * unitPx - 9) + 'px';
+                label.textContent = value + 'i';
+                imaginaryScale.appendChild(label);
+            }
+        }
+        if (imaginaryScaleNeg) {
+            for (let value = 1; value <= AXIS_RANGE; value++) {
+                const tick = document.createElement('div');
+                tick.className = 'imaginary-tick';
+                tick.style.top = (value * unitPx - 1) + 'px';
+                imaginaryScaleNeg.appendChild(tick);
+                const label = document.createElement('div');
+                label.className = 'imaginary-label';
+                label.style.top = (value * unitPx - 9) + 'px';
+                label.textContent = '-' + value + 'i';
+                imaginaryScaleNeg.appendChild(label);
+            }
+        }
+
+        if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+        // 把原点（实轴与虚轴交点）居中到视口中央
+        function centerOriginView() {
+            if (!numberLineWrap || !numberLine) return;
+            const wrapRect = numberLineWrap.getBoundingClientRect();
+            const lineRect = numberLine.getBoundingClientRect();
+            const originX = lineRect.left + lineRect.width / 2;
+            const wrapCenterX = wrapRect.left + numberLineWrap.clientWidth / 2;
+            numberLineWrap.scrollLeft += originX - wrapCenterX;
+            const axisLine = document.querySelector('.axis-line');
+            if (axisLine) {
+                const targetTop = window.innerHeight * 0.5;
+                window.scrollBy(0, axisLine.getBoundingClientRect().top - targetTop);
+            }
+        }
+
+        requestAnimationFrame(centerOriginView);
+        window.addEventListener('load', centerOriginView);
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(centerOriginView);
+        setTimeout(centerOriginView, 300);
+        window.addEventListener('resize', () => {
+            if (!postCollapse) centerOriginView();
+        });
+
+        // ---- Steve：极坐标移动，模长锁定为 1（单位圆上） ----
+        const steve = document.getElementById('steve');
+        const steveRun = document.getElementById('steve-run');
+        const STEVE_STANDING_SRC = 'pngs/Steve_JE5.png.webp';
+        const STEVE_SNEAKING_SRC = 'pngs/Sneaking_Steve.png.webp';
+        let isSneaking = false;
+        let isMoving = false;
+        let sprintToggle = false;
+        let sprintInterval = null;
+
+        function updateSteveSprite() {
+            if (!steve) return;
+            const running = isMoving && !isSneaking && sprintToggle;
+            if (steveRun) steveRun.classList.toggle('show', running);
+            steve.classList.toggle('steve-hidden', running);
+            steve.src = isSneaking ? STEVE_SNEAKING_SRC : STEVE_STANDING_SRC;
+            steve.classList.toggle('steve-sneaking', isSneaking);
+        }
+        function setSneaking(sneaking) {
+            if (!steve || isSneaking === sneaking) return;
+            isSneaking = sneaking;
+            updateSteveSprite();
+        }
+        function setMoving(moving) {
+            if (!steve || isMoving === moving) return;
+            isMoving = moving;
+            if (moving && !sprintInterval) {
+                sprintToggle = true;
+                sprintInterval = setInterval(() => {
+                    if (!isMoving || isSneaking) return;
+                    sprintToggle = !sprintToggle;
+                    updateSteveSprite();
+                }, 100);
+            } else if (!moving && sprintInterval) {
+                clearInterval(sprintInterval);
+                sprintInterval = null;
+                sprintToggle = false;
+            }
+            updateSteveSprite();
+        }
+
+        // 模长锁定为 1 个单位（单位圆半径）
+        let modulusPx = unitPx;
+        let thetaRad = 0; // 史蒂夫从 z=1 出发
+        let posX = Math.cos(thetaRad) * modulusPx;
+        let posY = -Math.sin(thetaRad) * modulusPx;
+        let jumpOffset = 0;
+        const pressedKeys = new Set();
+        let facingRight = false;
+        // 角速度：48°/s（0.8 × 60°/s）
+        const argSpeed = 0.048 * Math.PI / 180; // rad per ms
+        // post-collapse 直线移动速度 = e 的速度（E_FAST_SPEED 0.008）× 1.2
+        const POST_COLLAPSE_MOVE_SPEED = 0.0096; // unitPx per ms
+
+        let postCollapse = false; // 数轴收起后切回 level1 式移动
+        let collapseInitiated = false;
+
+        const coordZLine = document.getElementById('coord-z');
+        const steveHeadLabel = document.getElementById('steve-head-label');
+
+        // 把任意弧度归一化到 [0, 2π)
+        function posAngle(rad) {
+            return ((rad % TAU) + TAU) % TAU;
+        }
+        // 把任意弧度归一化到 (-π, π]
+        function normAngle(rad) {
+            const r = posAngle(rad);
+            return r > Math.PI ? r - TAU : r;
+        }
+        // 从 a 到 b 的最短带符号角：正 = CCW，负 = CW
+        function shortestSigned(a, b) {
+            let d = posAngle(b - a);
+            if (d > Math.PI) d -= TAU;
+            return d;
+        }
+        // 角度显示为弧度数值（不带 π，范围 -π~π）
+        function simplifyTheta(rad) {
+            return normAngle(rad).toFixed(2);
+        }
+        function formatComplexCoord(real, imag) {
+            if (real === 0 && imag === 0) return '0';
+            if (imag === 0) return `${real}`;
+            if (real === 0) return `${imag}i`;
+            if (imag > 0) return `${real} + ${imag}i`;
+            return `${real} - ${Math.abs(imag)}i`;
+        }
+        function updateCoordLabel() {
+            if (!coordZLine) return;
+            if (!postCollapse) {
+                // 弧度数值（不带 π），例如 cis(1.05)
+                coordZLine.textContent = 'z = cis(' + normAngle(thetaRad).toFixed(2) + ')';
+            } else {
+                const real = Math.round(posX / unitPx);
+                const imag = Math.round(-(posY + jumpOffset) / unitPx);
+                coordZLine.textContent = 'z = ' + formatComplexCoord(real, imag);
+            }
+            // 头顶坐标同步同样内容
+            if (steveHeadLabel) steveHeadLabel.textContent = coordZLine.textContent;
+        }
+
+        function updateStevePosition() {
+            if (!steve) return;
+            const totalY = posY + jumpOffset;
+            const flip = facingRight ? ' scaleX(-1)' : '';
+            const transform = `translate(calc(-50% + ${posX}px), ${totalY}px)${flip}`;
+            steve.style.transform = transform;
+            if (steveRun) steveRun.style.transform = transform;
+            // 头顶坐标跟随史蒂夫水平位置与跳跃高度
+            if (steveHeadLabel) steveHeadLabel.style.transform = `translate(calc(-50% + ${posX}px), ${totalY}px)`;
+        }
+
+        function playOneTimeJump() {
+            const peakHeight = unitPx * 1.1;
+            const timeToPeak = 0.225;
+            const gravity = (2 * peakHeight) / (timeToPeak * timeToPeak);
+            const initialVelocity = gravity * timeToPeak;
+            const start = performance.now();
+            function step(now) {
+                const t = (now - start) / 1000;
+                const height = initialVelocity * t - 0.5 * gravity * t * t;
+                if (height > 0) {
+                    jumpOffset = -height;
+                    updateStevePosition();
+                    requestAnimationFrame(step);
+                } else {
+                    jumpOffset = 0;
+                    updateStevePosition();
+                }
+            }
+            requestAnimationFrame(step);
+        }
+
+        // ---- E 精灵：独立状态 eThetaRad，尾随史蒂夫 ----
+        const eSprite = document.getElementById('e-sprite');
+        const eExponent = document.getElementById('e-exponent');
+        let eRevealed = false;
+        let eThetaRad = posAngle(thetaRad - Math.PI / 2); // 初始在 z=-i（玩家 θ=0 时 E 在 θ=-π/2 = 3π/2 ≈ z=-i）
+        let eLeftMinusOne = false; // E 显现后是否曾离开 z=-1
+        let eLeftOne = false;      // E 显现后是否曾离开 z=1
+        let endSpawned = false;
+        let endPortalValue = null; // 传送门所在端点：-1 或 1（决定收起后史蒂夫落点）
+        let eHoldMode = null; // E 保持模式：null=不动，'hold60'=保持60°夹角随玩家跑，'hold180'=保持180°随玩家跑
+        let eSide = -1; // E 相对玩家的固定侧：1 = CCW 侧，-1 = CW 侧（解冻时按实际位置确定）
+
+        function updateEPosition() {
+            const et = normAngle(eThetaRad);
+            const ex = Math.cos(et) * modulusPx;
+            const ey = -Math.sin(et) * modulusPx;
+            eSprite.style.transform = `translate(calc(-50% + ${ex}px), ${ey}px)`;
+            eExponent.textContent = 'i(' + simplifyTheta(et) + ')';
+        }
+
+        // ---- End 传送门：在 E 当前位置生成 ----
+        const endSprite = document.getElementById('end-sprite');
+        function placeEnd() {
+            // End 在 E 当前位置生成：垂直居中骑在实数轴上（门中心 = 轴），水平对齐 E
+            const et = normAngle(eThetaRad);
+            const ex = Math.cos(et) * modulusPx;
+            const ey = -Math.sin(et) * modulusPx;
+            endSprite.style.transform = `translate(calc(-50% + ${ex}px), calc(${ey}px + 50%))`;
+        }
+
+        const ANGLE_TOL = 4 * Math.PI / 180; // 4° 容差
+        const LEAVE_TOL = 30 * Math.PI / 180; // 必须离开 30° 才允许触发回归
+
+        // 史蒂夫走到 z=-i（θ=-π/2）触发 E 显现 + 冻结玩家
+        let frozen = false;
+        function checkTouch() {
+            if (eRevealed) return;
+            if (angleDiff(thetaRad, -Math.PI / 2) < ANGLE_TOL) {
+                eRevealed = true;
+                frozen = true; // 冻结玩家 1.5s（与 Tips 弹窗同步）
+                setMoving(false); // 立即停止跑动动画，否则 sprintInterval 会一直切换
+                eSprite.classList.add('revealed');
+                showTipsToast(1500);
+                // 弹窗 1.5s 弹回的同时解冻，并恢复 setMoving 状态
+                setTimeout(() => {
+                    frozen = false;
+                    const stillMoving = pressedKeys.has('a') || pressedKeys.has('d');
+                    setMoving(stillMoving);
+                    // 记录 E 所在一侧，并让 E 待机，由玩家之后的移动方向决定是否进入保持模式
+                    eSide = normAngle(eThetaRad - thetaRad) >= 0 ? 1 : -1;
+                    eHoldMode = null;
+                }, 1500);
+                // 冻结期间 E 以 2 倍速跑到 210° = 7π/6（0.75s 跑完，剩余时间原地等待）
+                animateETo7Pi6();
+                // E 显现位置即算"曾离开"端点，防止立即触发 End
+                eLeftMinusOne = true;
+                eLeftOne = true;
+            }
+        }
+
+        function angleDiff(a, b) {
+            return Math.abs(normAngle(a - b));
+        }
+
+        // 冻结期间 E 以 2 倍速动画到 210° = 7π/6
+        function animateETo7Pi6() {
+            const startTheta = eThetaRad;
+            const targetTheta = posAngle(7 * Math.PI / 6); // 210°
+            const dur = 750; // 2 倍速：0.75s 到位，剩余冻结时间原地等待
+            const t0 = performance.now();
+            function step(now) {
+                const t = Math.min((now - t0) / dur, 1);
+                // 选最短方向：从 startTheta 到 targetTheta
+                const d = shortestSigned(startTheta, targetTheta);
+                eThetaRad = startTheta + d * t;
+                updateEPosition();
+                if (t < 1) requestAnimationFrame(step);
+                else {
+                    eThetaRad = targetTheta;
+                    updateEPosition();
+                }
+            }
+            requestAnimationFrame(step);
+        }
+
+        // 检查 E 是否到达端点（z=-1 即 θ=π 或 z=1 即 θ=0）
+        function checkEEndpoints() {
+            if (!eRevealed || endSpawned) return;
+            const et = posAngle(eThetaRad);
+            // z=-1：θ=π
+            const dMinusOne = Math.abs(et - Math.PI);
+            if (dMinusOne < ANGLE_TOL) {
+                if (eLeftMinusOne) spawnEnd('-1');
+            } else if (dMinusOne > LEAVE_TOL) {
+                eLeftMinusOne = true;
+            }
+            // z=1：θ=0
+            const dOne = Math.min(et, Math.abs(et - TAU));
+            if (dOne < ANGLE_TOL) {
+                if (eLeftOne) spawnEnd('1');
+            } else if (dOne > LEAVE_TOL) {
+                eLeftOne = true;
+            }
+        }
+
+        function spawnEnd(label) {
+            endSpawned = true;
+            endPortalValue = Number(label); // 记录传送门端点，收起后史蒂夫落到这个数值上
+            // 精确吸附到端点：触发容差 4° 内生成时 E 可能还差几度，
+            // 直接取整到 z=-1 / z=1，否则门和数字会带几像素的随机偏移（看起来"歪"）
+            eThetaRad = label === '-1' ? Math.PI : 0;
+            placeEnd();
+            endSprite.classList.add('revealed');
+            // 传送门出现的同时，e 原地变成白色的 e^(iπ) / e^(i0)（无动画）
+            eExponent.textContent = label === '-1' ? 'i(π)' : 'i(0)';
+            eSprite.classList.add('e-at-endpoint');
+            // 与传送门相同的锚点：底部中心 + 下移自身半高 → 精灵中心 = 门中心 = 实数轴上
+            const et = normAngle(eThetaRad);
+            const ex = Math.cos(et) * modulusPx;
+            const ey = -Math.sin(et) * modulusPx;
+            eSprite.style.transform = `translate(calc(-50% + ${ex}px), calc(${ey}px + 50%))`;
+            // 传送门出现 0.5s 后白色 e 消失（门保留，玩家仍需站入触发收起）
+            setTimeout(() => {
+                if (endSpawned) eSprite.classList.remove('revealed');
+            }, 500);
+        }
+
+        // ---- End 传送门碰撞：站在墨绿色中心 2s → 数轴收起 ----
+        let endDwellStart = null;
+        function playerInEndCenter() {
+            if (!steve || !endSprite) return false;
+            const endRect = endSprite.getBoundingClientRect();
+            const steveRect = steve.getBoundingClientRect();
+            const insetX = endRect.width * 0.28;
+            const insetY = endRect.height * 0.15;
+            const cx = steveRect.left + steveRect.width / 2;
+            const cy = steveRect.top + steveRect.height / 2;
+            return (
+                cx >= endRect.left + insetX && cx <= endRect.right - insetX &&
+                cy >= endRect.top + insetY && cy <= endRect.bottom - insetY
+            );
+        }
+        function checkEndCollision() {
+            if (!endSpawned || collapseInitiated) return;
+            if (playerInEndCenter()) {
+                if (endDwellStart === null) endDwellStart = performance.now();
+                if (performance.now() - endDwellStart >= 1500) startCollapse(); // 站 1.5s 传送
+            } else {
+                endDwellStart = null;
+            }
+        }
+
+        // ---- 数轴收起：横竖同时收缩 ----
+        const imaginaryAxisPos = document.getElementById('imaginary-axis-pos');
+        const imaginaryAxisNeg = document.getElementById('imaginary-axis-neg');
+
+        function startCollapse() {
+            collapseInitiated = true;
+            // 清掉按住的键并停止跑动动画，防止收起后切回 level1 移动时史蒂夫自动走开
+            pressedKeys.clear();
+            setMoving(false);
+            jumpOffset = 0;
+            // 单位圆永久隐藏（平面展开移除 .collapsed 时也不能再出现）
+            document.getElementById('unit-circle').style.display = 'none';
+            // End 传送门消失（玩家触碰后 1.5s 进入收起场景时消失），E 也一起消失
+            endSprite.classList.remove('revealed');
+            eSprite.classList.remove('revealed');
+            // 横竖数轴同时收缩：虚轴 scaleY 压扁 + 背景变黑 + 实轴宽度收缩同时开始
+            imaginaryAxisPos.classList.add('collapsing');
+            imaginaryAxisNeg.classList.add('collapsing');
+            document.body.classList.add('collapsed');
+            // 页面开始变黑的同时，白色 e 在端点位置重新出现（位置由收缩循环逐帧同步）
+            if (endPortalValue !== null) eSprite.classList.add('revealed');
+            shrinkNumberLineToLevel1();
+            // 2s 后：切到 level1 式移动 + 弹出 Advancement
+            setTimeout(() => {
+                postCollapse = true;
+                updateCoordLabel();
+                showAdvancement();
+            }, 2000);
+        }
+
+        // 收缩：number-line 宽度 1260vw → 420vw，重算 unitPx，史蒂夫同步落到传送门端点
+        let level1UnitPx = 0;
+        function shrinkNumberLineToLevel1() {
+            const oldUnitPx = unitPx;
+            // 让 CSS transition 生效：先移除可能有的 inline width，用 CSS class 过渡
+            numberLine.classList.add('to-level1');
+            // 史蒂夫目标：传送门端点（无则最近整点），按预期终态单位换算
+            const expectedFinalUnit = (window.innerWidth * (LEVEL1_NL_WIDTH_VW / 100)) / (AXIS_RANGE * 2);
+            const targetX = endPortalValue !== null
+                ? endPortalValue * expectedFinalUnit
+                : Math.round(posX / oldUnitPx) * expectedFinalUnit;
+            const startX = posX, startY = posY;
+            // 收缩期间每帧重新居中：scrollWidth 变小时浏览器会把 scrollLeft
+            // 钳制到最右端，不实时纠偏的话画面会跳到数轴尽头
+            const centerStart = performance.now();
+            (function holdCenter() {
+                centerOriginView();
+                // 史蒂夫横向：有传送门时直接焊在端点刻度上（与刻度同步滑动，全程贴合 -1/1）；
+                // 无传送门时按 smoothstep 滑向最近整点
+                if (endPortalValue !== null) {
+                    posX = endPortalValue * (numberLine.clientWidth / (AXIS_RANGE * 2));
+                } else {
+                    const t = Math.min((performance.now() - centerStart) / 800, 1);
+                    const e = t * t * (3 - 2 * t);
+                    posX = startX + (targetX - startX) * e;
+                }
+                // 纵向：平滑落到实轴
+                const tf = Math.min((performance.now() - centerStart) / 800, 1);
+                const ef = tf * tf * (3 - 2 * tf);
+                posY = startY * (1 - ef);
+                updateStevePosition();
+                // E 同步：实轴上的端点位置，保持白色 e^(iπ/i0)
+                if (endPortalValue !== null) {
+                    const curPx = endPortalValue * (numberLine.clientWidth / (AXIS_RANGE * 2));
+                    eSprite.style.transform = `translate(calc(-50% + ${curPx}px), 50%)`;
+                }
+                if (performance.now() - centerStart < 1100) requestAnimationFrame(holdCenter);
+            })();
+            // 读新的 clientWidth（transition 结束后）
+            setTimeout(() => {
+                const newNLWidth = numberLine.clientWidth || window.innerWidth * (LEVEL1_NL_WIDTH_VW / 100);
+                level1UnitPx = newNLWidth / (AXIS_RANGE * 2);
+                // 重算 unitPx
+                unitPx = level1UnitPx;
+                modulusPx = unitPx;
+                numberLine.style.setProperty('--imaginary-unit', unitPx + 'px');
+                // 史蒂夫精确落到目标点（-1/1 或最近整点）
+                posX = endPortalValue !== null ? endPortalValue * unitPx : Math.round(posX / oldUnitPx) * unitPx;
+                posY = 0; // 已在实轴上
+                thetaRad = 0;
+                updateStevePosition();
+                // E 精确落到端点
+                if (endPortalValue !== null) {
+                    const ex = endPortalValue * unitPx;
+                    eSprite.style.transform = `translate(calc(-50% + ${ex}px), 50%)`;
+                }
+                // 居中视口
+                centerOriginView();
+                // 收起完成后：e 立刻开始快速向右移动（新阶段）
+                startEPhase1();
+            }, 1100); // 比 CSS transition 略长一点，保证完成
+        }
+
+        // level1 式跟随：史蒂夫只能在屏幕中央 40% 区域内活动（与前几关一致），
+        // 碰到距边 30% 的界线就以 1:1 同速滚动页面；scrollMargin 仍用于 e 的跟随
+        const scrollMargin = 60;
+        const EDGE = 0.3;
+        function followSteveIntoView() {
+            if (!steve || !numberLineWrap) return;
+            const steveRect = steve.getBoundingClientRect();
+
+            const wrapRect = numberLineWrap.getBoundingClientRect();
+            const marginX = numberLineWrap.clientWidth * EDGE;
+            const leftLimit = wrapRect.left + marginX;
+            const rightLimit = wrapRect.left + numberLineWrap.clientWidth - marginX;
+            if (steveRect.left < leftLimit) {
+                numberLineWrap.scrollLeft -= leftLimit - steveRect.left;
+            } else if (steveRect.right > rightLimit) {
+                numberLineWrap.scrollLeft += steveRect.right - rightLimit;
+            }
+
+            const marginY = window.innerHeight * EDGE;
+            if (steveRect.top < marginY) {
+                window.scrollBy(0, steveRect.top - marginY);
+            } else if (steveRect.bottom > window.innerHeight - marginY) {
+                window.scrollBy(0, steveRect.bottom - (window.innerHeight - marginY));
+            }
+        }
+
+        // e 的跟随：e 快碰到页面左右边缘时滚动页面（收起后所有阶段生效）
+        function followEIntoView() {
+            if (!eSprite || !numberLineWrap) return;
+            const eRect = eSprite.getBoundingClientRect();
+            const wrapRect = numberLineWrap.getBoundingClientRect();
+            if (eRect.left < wrapRect.left + scrollMargin) {
+                numberLineWrap.scrollLeft += eRect.left - (wrapRect.left + scrollMargin);
+            } else if (eRect.right > wrapRect.right - scrollMargin) {
+                numberLineWrap.scrollLeft += eRect.right - (wrapRect.right - scrollMargin);
+            }
+        }
+
+        // ---- 弹窗 ----
+        const tipsToast = document.getElementById('tips-toast');
+        let tipsTimer = null;
+        function showTipsToast(ms) {
+            tipsToast.classList.add('show');
+            if (tipsTimer) clearTimeout(tipsTimer);
+            tipsTimer = setTimeout(() => tipsToast.classList.remove('show'), ms);
+        }
+        const advancementToast = document.getElementById('advancement-toast');
+        let advTimer = null;
+        function showAdvancement() {
+            advancementToast.classList.add('show');
+            if (advTimer) clearTimeout(advTimer);
+            advTimer = setTimeout(() => advancementToast.classList.remove('show'), 3000);
+        }
+
+        // ---- 收起后的新流程：e 快跑 → 追逃（史蒂夫速度 = e 的 1.2 倍）→ 距离 ≤ 1 单位时 e 复制 i 展开复平面 → 跳转 level6 ----
+        let phase = 'none'; // 'none' → 'e-run'（e 独自快跑）→ 'chase'（追逃）→ 'expanding'
+        let eRealX = 0; // e 在实数轴上的像素位置（收起后 e 沿实轴移动）
+        const E_FAST_SPEED = 0.008; // e 的速度（unitPx/ms）：独自快跑与逃跑同速，史蒂夫为其 1.2 倍
+        let expansionStarted = false;
+        let rValue = 0; // e 的系数（位置的近似整数，ire^(iθ) 的 r）
+
+        // e 在实轴上移动时：系数跟随位置变化（近似整数），指数按符号显示 i(0)/i(π)
+        function updateEAxisLabel() {
+            eRLabel.textContent = Math.round(Math.abs(eRealX) / unitPx);
+            eRLabel.classList.add('show');
+            eExponent.textContent = eRealX >= 0 ? 'i(0)' : 'i(π)';
+        }
+
+        // 阶段 1：收起完成后 e 立刻快速向左（负方向）移动，到 z=-4 停下等待玩家追逐
+        function startEPhase1() {
+            if (endPortalValue === null) return;
+            phase = 'e-run';
+            eRealX = endPortalValue * unitPx;
+            let last = performance.now();
+            (function step(now) {
+                if (phase !== 'e-run') return;
+                const dt = Math.min(now - last, 50);
+                last = now;
+                eRealX -= E_FAST_SPEED * unitPx * dt;
+                const stopX = -4 * unitPx;
+                if (eRealX <= stopX) {
+                    eRealX = stopX;
+                    phase = 'chase'; // 到 z=-4 停下，等待玩家追逐
+                }
+                eSprite.style.transform = `translate(calc(-50% + ${eRealX}px), 50%)`;
+                updateEAxisLabel();
+                if (phase === 'e-run') requestAnimationFrame(step);
+            })(last);
+        }
+
+        // ---- 平面展开：e 复制一个 i（显示系数 ir）→ 横幅 → 虚轴重新长出 → e 飞向虚数轴 → 跳转 level6 ----
+        const eRLabel = document.getElementById('e-r-label');
+        const expandBanner = document.getElementById('expand-banner');
+        function startExpansion() {
+            if (expansionStarted) return;
+            expansionStarted = true;
+            phase = 'expanding';
+            // e 复制一个 i：系数定格为当前位置的近似整数（ire^(iθ) 的 r）
+            rValue = Math.round(Math.abs(eRealX) / unitPx);
+            eRLabel.textContent = 'i' + rValue;
+            eRLabel.classList.add('show');
+            if (expandBanner) {
+                expandBanner.classList.add('show');
+                // 停留 3s 后淡出（0.4s 淡完），淡出结束后虚轴重新长出
+                setTimeout(() => expandBanner.classList.remove('show'), 3000);
+            }
+            // 横幅显示 3s + 淡出 0.4s 完全消失后：保持黑色背景 + 白色数轴，虚轴按收起动画的逆过程重新长出
+            setTimeout(() => {
+                rebuildImaginaryTicks();
+                imaginaryAxisPos.classList.remove('collapsing');
+                imaginaryAxisNeg.classList.remove('collapsing');
+            }, 3400);
+            // 展开触发后 5s：e 快速移动到虚数轴上 i·r·e^(iθ) 对应的位置并消失
+            setTimeout(flyEToPlanePoint, 5000);
+        }
+
+        // 虚轴刻度按当前单位重建（收起时单位从 3 倍变回 1 倍，旧刻度位置已失效）
+        function rebuildImaginaryTicks() {
+            imaginaryScale.innerHTML = '';
+            imaginaryScaleNeg.innerHTML = '';
+            for (let value = 1; value <= AXIS_RANGE; value++) {
+                const tick = document.createElement('div');
+                tick.className = 'imaginary-tick';
+                tick.style.bottom = (value * unitPx - 1) + 'px';
+                imaginaryScale.appendChild(tick);
+                const label = document.createElement('div');
+                label.className = 'imaginary-label';
+                label.style.bottom = (value * unitPx - 9) + 'px';
+                label.textContent = value + 'i';
+                imaginaryScale.appendChild(label);
+
+                const tickN = document.createElement('div');
+                tickN.className = 'imaginary-tick';
+                tickN.style.top = (value * unitPx - 1) + 'px';
+                imaginaryScaleNeg.appendChild(tickN);
+                const labelN = document.createElement('div');
+                labelN.className = 'imaginary-label';
+                labelN.style.top = (value * unitPx - 9) + 'px';
+                labelN.textContent = '-' + value + 'i';
+                imaginaryScaleNeg.appendChild(labelN);
+            }
+        }
+
+        // e 快速飞到虚数轴上 i·r·e^(iθ) 的位置并消失，然后跳转 level6
+        function flyEToPlanePoint() {
+            // i·r·e^(iθ)：e 在正半轴 → θ=0，飞到 +r·i；负半轴 → θ=π，飞到 -r·i
+            const imagUnit = eRealX >= 0 ? rValue : -rValue;
+            const targetX = 0;
+            const targetY = -imagUnit * unitPx; // 屏幕坐标向上为负
+            const startX = eRealX;
+            const startY = 0;
+            const t0 = performance.now();
+            const dur = 800;
+            (function step(now) {
+                const t = Math.min((now - t0) / dur, 1);
+                const e = t * t * (3 - 2 * t);
+                const x = startX + (targetX - startX) * e;
+                const y = startY + (targetY - startY) * e;
+                eSprite.style.transform = `translate(calc(-50% + ${x}px), calc(50% + ${y}px))`;
+                if (t < 1) {
+                    requestAnimationFrame(step);
+                } else {
+                    // 到达后消失，随即保存通关状态并跳转 level6
+                    setTimeout(() => {
+                        eSprite.classList.remove('revealed');
+                        setTimeout(async () => {
+                            // 先等存档写完（localStorage + Supabase）再跳转，
+                            // 保证 games 页面的 Level 5 Passed 徽章立即生效
+                            await persistLevel5Passed();
+                            // 新版 level6 从原点出生，不再读取 sx 参数
+                            window.location.href = 'level6.html?v=42';
+                        }, 500);
+                    }, 300);
+                }
+            })(t0);
+        }
+
+        // ---- Supabase 存档（与 level1-4 一致） ----
+        const supabaseClient = window.supabase
+            ? window.supabase.createClient(
+                "https://mrhcdtaqeintpeoeknlq.supabase.co",
+                "sb_publishable_8sB8D4RFrbLVYffhSkqqVQ_XrJdrG0E"
+            )
+            : null;
+        let currentUserId = null;
+        (async () => {
+            if (!supabaseClient) return;
+            const { data, error } = await supabaseClient.auth.getSession();
+            if (!error && data && data.session && data.session.user) {
+                currentUserId = data.session.user.id;
+            }
+        })();
+        async function persistLevel5Passed() {
+            localStorage.setItem('level5_passed', 'true');
+            if (!supabaseClient || !currentUserId) return;
+            const { error } = await supabaseClient
+                .from('app_state')
+                .upsert({ key: `${currentUserId}:level5_passed`, value: true, updated_at: new Date().toISOString() });
+            if (error) console.error('Failed to save Level 5 completion:', error);
+        }
+
+        // ---- 主循环 ----
+        let lastFrameTime = performance.now();
+
+        function frameLoop(now) {
+            const dt = now - lastFrameTime;
+            lastFrameTime = now;
+            let moved = false;
+            const prevPosX = posX;
+            const prevTheta = thetaRad; // 用于计算玩家本帧转向
+
+            if (!postCollapse) {
+                // 冻结/收起期间玩家不动（收起动画会接管史蒂夫位置）
+                if (!frozen && !collapseInitiated) {
+                    // 极坐标：a 增大 θ（逆时针），d 减小 θ（顺时针）；模长锁定
+                    if (pressedKeys.has('a')) { thetaRad += argSpeed * dt; moved = true; }
+                    if (pressedKeys.has('d')) { thetaRad -= argSpeed * dt; moved = true; }
+                    thetaRad = posAngle(thetaRad);
+                    posX = Math.cos(thetaRad) * modulusPx;
+                    posY = -Math.sin(thetaRad) * modulusPx;
+                }
+
+                // E 的尾随逻辑：必须解冻 + 玩家本帧有移动才判定（玩家停下，e也停下）
+                if (!frozen && moved && !endSpawned && eRevealed) {
+                    // chaseGap：以 E 所在一侧为基准的连续夹角 [0, 360)。
+                    // 不能用 ±180° 最短角：接近 180° 时符号会在 ±179° 间翻转，导致误判逼近/远离
+                    const s = normAngle(eThetaRad - thetaRad);
+                    const chaseGap = posAngle(eSide * s);
+                    const dTheta = shortestSigned(prevTheta, thetaRad); // 玩家本帧转向（正 = CCW）
+
+                    if (Math.abs(dTheta) > 1e-9) {
+                        const movingCCW = dTheta > 0;
+                        // 玩家朝 E 所在一侧移动 = 逼近；否则 = 远离
+                        const approaching = (movingCCW && eSide > 0) || (!movingCCW && eSide < 0);
+
+                        if (approaching) {
+                            // 朝 E 走：chaseGap 已 ≤ 60° 才进入保持模式，否则 E 不动
+                            eHoldMode = chaseGap <= Math.PI / 3 + 0.02 ? 'hold60' : null;
+                        } else {
+                            // 背离 E 走：chaseGap 已达到 180° 才进入保持模式，否则 E 不动
+                            eHoldMode = chaseGap >= Math.PI - 0.02 ? 'hold180' : null;
+                        }
+
+                        if (eHoldMode) {
+                            // 保持模式：E 贴在自己一侧，维持 60°/180° 夹角随玩家跑
+                            const goal = eHoldMode === 'hold60' ? Math.PI / 3 : Math.PI;
+                            const eTarget = posAngle(thetaRad + eSide * goal);
+                            const dE = shortestSigned(eThetaRad, eTarget);
+                            const eSpeed = argSpeed * dt;
+                            if (Math.abs(dE) <= eSpeed) {
+                                eThetaRad = eTarget;
+                            } else {
+                                eThetaRad += Math.sign(dE) * eSpeed;
+                            }
+                        }
+                    }
+                    updateEPosition();
+                    checkEEndpoints();
+                }
+
+                if (moved && !eRevealed) {
+                    // 未碰到 E 时仍按老位置更新（跟随 90°）
+                    updateEPosition();
+                    checkTouch();
+                }
+            } else {
+                // level1 式：只能 a/d，不能 w/s
+                const moveSpeed = unitPx * POST_COLLAPSE_MOVE_SPEED;
+                const moveMaxX = AXIS_RANGE * unitPx;
+                if (pressedKeys.has('a')) { posX = Math.max(posX - moveSpeed * dt, -moveMaxX); moved = true; }
+                if (pressedKeys.has('d')) { posX = Math.min(posX + moveSpeed * dt, moveMaxX); moved = true; }
+
+                // 追逃阶段：史蒂夫在 e 任何一侧朝 e 移动 → e 以自身速度同向逃跑（史蒂夫速度 = e 的 1.2 倍，会逐渐追近）；
+                // 停下/反向 → e 不动。史蒂夫与 e 距离 ≤ 1 单位时，e 复制一个 i 并展开复平面
+                if (phase === 'chase') {
+                    if (moved) {
+                        const pdx = posX - prevPosX;
+                        if (pdx !== 0 && (eRealX - posX) * pdx > 0) {
+                            eRealX += Math.sign(pdx) * E_FAST_SPEED * unitPx * dt;
+                            eRealX = Math.max(-moveMaxX, Math.min(moveMaxX, eRealX));
+                            eSprite.style.transform = `translate(calc(-50% + ${eRealX}px), 50%)`;
+                            updateEAxisLabel();
+                        }
+                    }
+                    if (Math.abs(posX - eRealX) <= unitPx) startExpansion();
+                }
+            }
+
+            // 朝向跟随屏幕水平位移
+            const dx = posX - prevPosX;
+            if (dx > 0.01) facingRight = true;
+            else if (dx < -0.01) facingRight = false;
+
+            if (moved) {
+                updateStevePosition();
+                if (postCollapse) followSteveIntoView();
+            }
+            if (postCollapse) followEIntoView(); // e 碰到页面边缘也滚动页面
+            updateCoordLabel();
+            checkEndCollision();
+            requestAnimationFrame(frameLoop);
+        }
+
+        // ---- 键盘：和 level4 一样的按键，但 w/s 无效（模长锁定） ----
+        window.addEventListener('keydown', (event) => {
+            const key = event.key.toLowerCase();
+            if (key === 'a' || key === 'd') {
+                pressedKeys.add(key);
+                if (!frozen) setMoving(true); // 冻结期间不显示 walking 动画
+            }
+            // w/s 在 level5 中不控制模长，忽略
+            if (event.key === 'Shift') setSneaking(true);
+            if (event.code === 'Space' || event.key === ' ') {
+                event.preventDefault();
+                if (event.repeat) return;
+                if (!frozen) playOneTimeJump();
+            }
+        });
+        window.addEventListener('keyup', (event) => {
+            const key = event.key.toLowerCase();
+            if (key === 'a' || key === 'd') {
+                pressedKeys.delete(key);
+                if (!frozen) {
+                    const stillMoving = pressedKeys.has('a') || pressedKeys.has('d');
+                    setMoving(stillMoving);
+                }
+            }
+            if (event.key === 'Shift') setSneaking(false);
+        });
+
+        // 初始渲染
+        updateStevePosition();
+        updateEPosition();
+        updateCoordLabel();
+        requestAnimationFrame(() => centerOriginView());
+        requestAnimationFrame(frameLoop);
+    </script>
+</body>
+</html>

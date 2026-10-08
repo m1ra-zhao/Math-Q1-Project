@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Level 3</title>
+    <link rel="stylesheet" href="style.css?v=20261002a">
+</head>
+<body class="level-page level3-page">
+    <div class="level-page-inner">
+        <a class="wiki-back-link" href="index.html">← Back to Home</a>
+        <div id="steve-coord" class="steve-coord-label">
+            <div id="coord-z"></div>
+        </div>
+
+        <div class="number-line-wrap" aria-label="Number line">
+            <div class="number-line">
+                <div class="axis-arrow left"></div>
+                <div class="axis-arrow right"></div>
+                <div class="axis-line"></div>
+                <div class="imaginary-axis imaginary-axis-visible" id="imaginary-axis-pos" aria-label="Positive imaginary axis">
+                    <div class="imaginary-axis-line"></div>
+                    <div id="imaginary-scale" class="imaginary-scale"></div>
+                </div>
+                <div class="imaginary-axis imaginary-axis-neg imaginary-axis-visible" id="imaginary-axis-neg" aria-label="Negative imaginary axis">
+                    <div class="imaginary-axis-line"></div>
+                    <div id="imaginary-scale-neg" class="imaginary-scale"></div>
+                </div>
+                <div id="number-scale" class="number-scale"></div>
+                <!-- 三个宝藏：初始隐藏，挖到对应位置才显示 -->
+                <img id="treasure-flint" class="treasure-sprite" src="pngs/flint.png" alt="Flint">
+                <img id="treasure-iron" class="treasure-sprite" src="pngs/iron_ingot.png" alt="Iron Ingot">
+                <img id="treasure-obsidian" class="treasure-sprite" src="pngs/Obsidian_JE3_BE2.png" alt="Obsidian">
+                <!-- 破损的 portal（6 - 8i）与激活后的 portal -->
+                <img id="ruined-portal" class="ruined-portal-sprite" src="pngs/Overworld_Ruined_Portal_1.png" alt="Ruined Portal">
+                <img id="nether-portal" class="nether-portal-sprite" src="pngs/Nether_portal.png" alt="Nether Portal">
+                <img id="steve" class="steve-sprite" src="pngs/Steve_JE5.png.webp" alt="Steve">
+                <img id="steve-run" class="steve-sprite steve-run-img" src="pngs/Sprinting_Steve.png" alt="">
+            </div>
+        </div>
+    </div>
+
+    <div id="hotbar" class="hotbar" aria-label="Hotbar"></div>
+
+    <!-- 罗盘悬浮窗：选中槽位 1 时显示宝藏相对位置 -->
+    <div id="compass-tooltip" class="compass-tooltip"></div>
+
+    <!-- 开场提示：收集 3 种材料 -->
+    <div id="tips-toast" class="system-toast">
+        <img src="pngs/system.png" alt="" class="system-toast-bg">
+        <div class="system-toast-text">
+            <div class="system-toast-line">Tips!</div>
+            <div class="system-toast-line white-line">Collect 3 materials<br>to activate portal!</div>
+        </div>
+    </div>
+
+    <!-- 挖空提示：NO TREASURE FOUND -->
+    <div id="no-treasure-banner" class="no-treasure-banner">NO TREASURE FOUND</div>
+
+    <!-- 拾取黑曜石时的成就弹窗（左部带图标） -->
+    <div id="advancement-toast" class="advancement-toast with-icon">
+        <img src="pngs/advancement.png" alt="" class="advancement-toast-bg">
+        <img src="pngs/Obsidian_JE3_BE2.png" alt="Obsidian" class="advancement-toast-item-icon">
+        <div class="advancement-toast-text">
+            <div class="advancement-line-title">Advancement Made!</div>
+            <div class="advancement-line-body">Ice Bucket Challenge</div>
+        </div>
+    </div>
+
+    <!-- 通关画面 -->
+    <div id="win-overlay" class="win-overlay">
+        <div class="win-text">CONGRATULATIONS!</div>
+        <button id="win-back-btn" type="button"><span>BACK</span></button>
+    </div>
+
+    <!-- 失败画面 -->
+    <div id="fail-overlay" class="win-overlay">
+        <div class="win-text">You Failed!</div>
+        <button id="fail-retry-btn" type="button"><span>Try Again</span></button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const scale = document.getElementById('number-scale');
+        const imaginaryScale = document.getElementById('imaginary-scale');
+        const imaginaryScaleNeg = document.getElementById('imaginary-scale-neg');
+        const numberLineWrap = document.querySelector('.number-line-wrap');
+        const numberLine = document.querySelector('.number-line');
+        const unitPx = numberLine.clientWidth / 40;
+        numberLine.style.setProperty('--imaginary-unit', unitPx + 'px');
+
+        function centerNumberLine() {
+            if (!numberLineWrap || !numberLine) return;
+            // 让原点（number-line 的中心）对齐 wrap 视口中心
+            const wrapRect = numberLineWrap.getBoundingClientRect();
+            const lineRect = numberLine.getBoundingClientRect();
+            const originX = lineRect.left + lineRect.width / 2;
+            const wrapCenterX = wrapRect.left + numberLineWrap.clientWidth / 2;
+            numberLineWrap.scrollLeft += originX - wrapCenterX;
+        }
+
+        function alignAxisInView() {
+            const axisLine = document.querySelector('.axis-line');
+            if (!axisLine) return;
+            // 原点（实轴）对齐窗口垂直中心
+            const targetTop = window.innerHeight * 0.5;
+            window.scrollBy(0, axisLine.getBoundingClientRect().top - targetTop);
+        }
+
+        // 顶部预留滚动余量：史蒂夫走到 +20i（含头部高度与跳跃峰值）时，
+        // 页面必须仍有向上滚动的空间，否则跟随会在页面顶部耗尽、让人走出屏幕
+        function ensureTopScrollRoom() {
+            if (!numberLineWrap) return;
+            const vh = window.innerHeight / 100;
+            const needed = 1.1 * unitPx + 2.6 * vh + 80;
+            numberLineWrap.style.paddingTop = Math.max(needed, 2 * vh) + 'px';
+        }
+        ensureTopScrollRoom();
+
+        // 实轴刻度 -20 ~ 20
+        if (scale) {
+            for (let value = -20; value <= 20; value++) {
+                const tick = document.createElement('div');
+                const percent = ((value + 20) / 40) * 100;
+                tick.className = 'axis-tick';
+                tick.style.left = percent + '%';
+                tick.style.height = (value % 5 === 0 ? 25 : 12) + 'px';
+
+                const label = document.createElement('div');
+                label.className = 'axis-label';
+                label.style.left = percent + '%';
+                label.textContent = value;
+
+                scale.appendChild(tick);
+                scale.appendChild(label);
+            }
+        }
+
+        // 虚轴刻度 +1i ~ +20i / -1i ~ -20i
+        if (imaginaryScale) {
+            for (let value = 1; value <= 20; value++) {
+                const tick = document.createElement('div');
+                tick.className = 'imaginary-tick';
+                tick.style.bottom = (value * unitPx - 1) + 'px';
+
+                const label = document.createElement('div');
+                label.className = 'imaginary-label';
+                label.style.bottom = (value * unitPx - 9) + 'px';
+                label.textContent = value + 'i';
+
+                imaginaryScale.appendChild(tick);
+                imaginaryScale.appendChild(label);
+            }
+        }
+
+        if (imaginaryScaleNeg) {
+            for (let value = 1; value <= 20; value++) {
+                const tick = document.createElement('div');
+                tick.className = 'imaginary-tick';
+                tick.style.top = (value * unitPx - 1) + 'px';
+
+                const label = document.createElement('div');
+                label.className = 'imaginary-label';
+                label.style.top = (value * unitPx - 9) + 'px';
+                label.textContent = '-' + value + 'i';
+
+                imaginaryScaleNeg.appendChild(tick);
+                imaginaryScaleNeg.appendChild(label);
+            }
+        }
+
+        // 禁用浏览器滚动位置恢复，防止刷新后覆盖初始居中
+        if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+        requestAnimationFrame(() => {
+            centerNumberLine();
+            alignAxisInView();
+        });
+        window.addEventListener('load', alignAxisInView);
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(alignAxisInView);
+        }
+        setTimeout(alignAxisInView, 300);
+        window.addEventListener('resize', () => {
+            ensureTopScrollRoom();
+            centerNumberLine();
+            alignAxisInView();
+        });
+
+        // ---- 宝藏定义：位置为复数坐标（数学坐标，虚部向上为正） ----
+        const TREASURE_DEFS = [
+            { name: 'flint',    src: 'pngs/flint.png',            x: 18, y: 17, slotIndex: 2, word: 'first' },
+            { name: 'iron',     src: 'pngs/iron_ingot.png',       x: -5, y: -19, slotIndex: 3, word: 'second' },
+            // (5+4i)(1+2i) = 5 + 10i + 4i + 8i^2 = -3 + 14i
+            { name: 'obsidian', src: 'pngs/Obsidian_JE3_BE2.png', x: -3, y: 14, slotIndex: 4, word: 'final' }
+        ];
+        const treasures = TREASURE_DEFS.map((def) => {
+            const el = document.getElementById('treasure-' + def.name);
+            // 屏幕坐标：top = 50% - y*unit（虚部向上为正）
+            el.style.left = `calc(50% + ${def.x * unitPx}px)`;
+            el.style.top = `calc(50% - ${def.y * unitPx}px)`;
+            return { ...def, el, collected: false };
+        });
+        let digStage = 0; // 0=挖 flint, 1=挖 iron, 2=挖 obsidian
+
+        // ---- Portal：破损(6-8i) + 激活态 ----
+        const ruinedPortal = document.getElementById('ruined-portal');
+        const netherPortal = document.getElementById('nether-portal');
+        const PORTAL_X = 6;
+        const PORTAL_Y = -8; // 6 - 8i
+        ruinedPortal.style.transform = `translate(calc(-50% + ${PORTAL_X * unitPx}px), ${-PORTAL_Y * unitPx}px)`;
+        netherPortal.style.transform = `translate(calc(-50% + ${PORTAL_X * unitPx}px), ${-PORTAL_Y * unitPx}px)`;
+
+        // ---- 物品栏：9 格，槽位 1 罗盘 / 槽位 2 镐子 / 槽位 3-5 宝藏 ----
+        const hotbar = document.getElementById('hotbar');
+        const slotEls = [];
+        const SLOT_SRC = 'pngs/hotbar_offhand_right.png';
+        let selectedSlot = -1;
+
+        // 槽位 1：罗盘 gif
+        const compassInSlot = document.createElement('img');
+        compassInSlot.className = 'slot-item';
+        compassInSlot.src = 'pngs/Lodestone_Compass_JE2_BE2.gif';
+        compassInSlot.alt = 'Compass';
+
+        // 槽位 2：钻石镐 + 耐久条（green_progress 叠在 green_background 上）
+        const pickaxeInSlot = document.createElement('img');
+        pickaxeInSlot.className = 'slot-item pickaxe-in-slot';
+        pickaxeInSlot.src = 'pngs/diamond_pickaxe.png';
+        pickaxeInSlot.alt = 'Diamond Pickaxe';
+        const durabilityBar = document.createElement('div');
+        durabilityBar.className = 'durability-bar';
+        const durabilityBg = document.createElement('img');
+        durabilityBg.src = 'pngs/green_background.png';
+        durabilityBg.alt = '';
+        const durabilityProgress = document.createElement('img');
+        durabilityProgress.src = 'pngs/green_progress.png';
+        durabilityProgress.alt = '';
+        durabilityBar.appendChild(durabilityBg);
+        durabilityBar.appendChild(durabilityProgress);
+
+        // 槽位 3-5：宝藏图标（挖到后显示）
+        const treasureSlotImgs = treasures.map((t) => {
+            const img = document.createElement('img');
+            img.className = 'slot-item treasure-in-slot';
+            img.src = t.src;
+            img.alt = t.name;
+            return img;
+        });
+
+        for (let i = 0; i < 9; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'hotbar-slot';
+            const baseImg = document.createElement('img');
+            baseImg.src = SLOT_SRC;
+            baseImg.alt = '';
+            slot.appendChild(baseImg);
+            if (i === 0) slot.appendChild(compassInSlot);
+            if (i === 1) { slot.appendChild(pickaxeInSlot); slot.appendChild(durabilityBar); }
+            if (i >= 2 && i <= 4) slot.appendChild(treasureSlotImgs[i - 2]);
+            const selImg = document.createElement('img');
+            selImg.className = 'slot-selection';
+            selImg.src = 'pngs/hotbar_selection.png';
+            selImg.alt = '';
+            slot.appendChild(selImg);
+            slot.addEventListener('click', (event) => {
+                event.stopPropagation();
+                if (pickDragMoved) { pickDragMoved = false; return; } // 拖拽后的误触 click 不切换选中
+                selectSlot(i);
+            });
+            hotbar.appendChild(slot);
+            slotEls.push(slot);
+        }
+        hotbar.classList.add('show', 'clickable');
+
+        function selectSlot(index) {
+            selectedSlot = (selectedSlot === index) ? -1 : index;
+            slotEls.forEach((el, i) => el.classList.toggle('selected', i === selectedSlot));
+            updateCompassTooltipVisibility();
+            // 选中后立即刷新文本，不依赖下一帧
+            updateCompassTooltip();
+        }
+
+        // ---- 罗盘悬浮窗：实时显示宝藏与玩家的相对位置 ----
+        const compassTooltip = document.getElementById('compass-tooltip');
+
+        function updateCompassTooltipVisibility() {
+            compassTooltip.classList.toggle('show', selectedSlot === 0);
+        }
+
+        function formatComplexCoord(real, imag) {
+            if (real === 0 && imag === 0) return '0';
+            if (imag === 0) return `${real}`;
+            if (real === 0) return `${imag}i`;
+            if (imag > 0) return `${real} + ${imag}i`;
+            return `${real} - ${Math.abs(imag)}i`;
+        }
+
+        function updateCompassTooltip() {
+            if (selectedSlot !== 0) return;
+            const playerRe = posX / unitPx;
+            const playerIm = -posY / unitPx;
+            if (digStage < 2) {
+                const t = treasures[digStage];
+                const relRe = t.x - playerRe;
+                const relIm = t.y - playerIm;
+                compassTooltip.textContent =
+                    `The ${t.word} treasure is relative (${formatComplexCoord(Math.round(relRe), Math.round(relIm))}) to you!`;
+            } else {
+                compassTooltip.textContent = 'The treasure is at (5+4i)(1+2i).';
+            }
+        }
+
+        // ---- 钻石镐：耐久 5，选中槽位 2 后点击屏幕使用 ----
+        const durabilityTotal = 5;
+        let durabilityLeft = durabilityTotal;
+
+        function updateDurabilityBar() {
+            durabilityProgress.style.width = (durabilityLeft / durabilityTotal) * 100 + '%';
+        }
+
+        const noTreasureBanner = document.getElementById('no-treasure-banner');
+        let noTreasureTimeout = null;
+
+        function showNoTreasure() {
+            noTreasureBanner.classList.add('show');
+            if (noTreasureTimeout) clearTimeout(noTreasureTimeout);
+            // 渐显后停留 3 秒，再渐隐
+            noTreasureTimeout = setTimeout(() => {
+                noTreasureBanner.classList.remove('show');
+            }, 3400);
+        }
+
+        // 挖掘判定：左上角实时坐标（取整显示值）与目标坐标完全一致才算挖中
+        function usePickaxe() {
+            if (durabilityLeft <= 0 || hasWon || hasFailed) return;
+            durabilityLeft -= 1;
+            updateDurabilityBar();
+
+            const t = treasures[digStage];
+            const playerRe = Math.round(posX / unitPx);
+            const playerIm = Math.round(-posY / unitPx);
+            if (playerRe === t.x && playerIm === t.y) {
+                revealTreasure(t);
+            } else {
+                showNoTreasure();
+            }
+
+            // 失败判定：耐久归零且未完成第 7 步（未拿到 obsidian）
+            if (durabilityLeft === 0 && !treasures[2].collected) {
+                setTimeout(() => showFailOverlay(), 600);
+            }
+        }
+
+        // ---- 使用镐子：把 pickaxe 拖到史蒂夫身上/脚下（level2 雪花同款拖拽）----
+        let pickDragGhost = null;
+        let pickDragMoved = false;
+        pickaxeInSlot.draggable = false;
+
+        function movePickGhost(event, isInitial) {
+            if (!pickDragGhost) return;
+            if (!isInitial) pickDragMoved = true;
+            pickDragGhost.style.left = `${event.clientX}px`;
+            pickDragGhost.style.top = `${event.clientY}px`;
+        }
+
+        pickaxeInSlot.addEventListener('pointerdown', (event) => {
+            // 只响应左键，且必须先选中槽位 2（镐子所在槽）
+            if (event.button !== 0 || selectedSlot !== 1) return;
+            event.preventDefault();
+            pickDragMoved = false;
+            pickaxeInSlot.setPointerCapture(event.pointerId);
+
+            pickDragGhost = document.createElement('img');
+            pickDragGhost.src = 'pngs/diamond_pickaxe.png';
+            pickDragGhost.className = 'item-drag-ghost';
+            pickDragGhost.style.height = `${pickaxeInSlot.getBoundingClientRect().height}px`;
+            document.body.appendChild(pickDragGhost);
+            movePickGhost(event, true);
+        });
+
+        pickaxeInSlot.addEventListener('pointermove', movePickGhost);
+
+        function endPickDrag(event) {
+            if (!pickDragGhost) return;
+            pickDragGhost.remove();
+            pickDragGhost = null;
+            if (!event) return;
+            // 拖回物品栏上松手 = 取消，不挖掘
+            const hb = hotbar.getBoundingClientRect();
+            if (event.clientX >= hb.left && event.clientX <= hb.right &&
+                event.clientY >= hb.top && event.clientY <= hb.bottom) return;
+            // 任意位置松手都算一次挖掘：站对位置挖出宝藏，站错位置弹出 NO TREASURE FOUND
+            usePickaxe();
+        }
+        pickaxeInSlot.addEventListener('pointerup', endPickDrag);
+        pickaxeInSlot.addEventListener('pointercancel', () => endPickDrag(null));
+
+        // ---- 挖到宝藏：原地显示 → 飞入物品栏对应槽位 ----
+        function revealTreasure(t) {
+            if (t.collected) return;
+            t.collected = true;
+            t.el.classList.add('revealed');
+            if (t.name === 'obsidian') showObsidianAdvancement();
+
+            // 原地停留片刻再飞向物品栏
+            setTimeout(() => flyTreasureToSlot(t), 500);
+        }
+
+        // 成就弹窗：滑入停留 3 秒后弹回（交互与 level1 一致）
+        const advancementToast = document.getElementById('advancement-toast');
+        let advancementToastTimer = null;
+        function showObsidianAdvancement() {
+            if (!advancementToast) return;
+            advancementToast.classList.add('show');
+            if (advancementToastTimer) clearTimeout(advancementToastTimer);
+            advancementToastTimer = setTimeout(() => advancementToast.classList.remove('show'), 3000);
+        }
+
+        function flyTreasureToSlot(t) {
+            const rect = t.el.getBoundingClientRect();
+            t.el.classList.add('picked');
+
+            const fly = document.createElement('img');
+            fly.src = t.src;
+            fly.className = 'potion-fly';
+            fly.style.left = rect.left + 'px';
+            fly.style.top = rect.top + 'px';
+            fly.style.height = rect.height + 'px';
+            document.body.appendChild(fly);
+
+            const slotImg = treasureSlotImgs[TREASURE_DEFS.findIndex((d) => d.name === t.name)];
+            const targetRect = slotEls[t.slotIndex].getBoundingClientRect();
+            const targetHeight = targetRect.height * 0.68;
+            const targetWidth = rect.width * (targetHeight / rect.height);
+
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    fly.style.left = (targetRect.left + targetRect.width / 2 - targetWidth / 2) + 'px';
+                    fly.style.top = (targetRect.top + targetRect.height / 2 - targetHeight / 2) + 'px';
+                    fly.style.height = targetHeight + 'px';
+                });
+            });
+
+            fly.addEventListener('transitionend', () => {
+                fly.remove();
+                slotImg.classList.add('show');
+                // 宝藏到手后才切换到下一阶段的罗盘提示
+                digStage = Math.min(digStage + 1, 2);
+            }, { once: true });
+        }
+
+        // ---- 开场 Tips 弹窗：停留 3 秒后弹回 ----
+        const tipsToast = document.getElementById('tips-toast');
+
+        function showTipsToastBriefly(durationMs) {
+            tipsToast.classList.add('show');
+            setTimeout(() => tipsToast.classList.remove('show'), durationMs);
+        }
+
+        setTimeout(() => showTipsToastBriefly(3000), 400);
+
+        // ---- 通关 / 失败画面 ----
+        const winOverlay = document.getElementById('win-overlay');
+        const failOverlay = document.getElementById('fail-overlay');
+        let hasWon = false;
+        let hasFailed = false;
+
+        document.getElementById('win-back-btn').addEventListener('click', () => {
+            sessionStorage.setItem('open_game_page', 'true');
+            window.location.href = 'index.html';
+        });
+
+        document.getElementById('fail-retry-btn').addEventListener('click', () => {
+            // 重置 level3：整页刷新即可恢复初始状态
+            window.location.reload();
+        });
+
+        function showWinOverlay() {
+            if (hasWon || hasFailed) return;
+            hasWon = true;
+            persistLevel3Passed();
+            winOverlay.classList.add('show');
+        }
+
+        // 与 level1/2 相同的 Supabase 客户端，用于保存通关状态
+        const supabaseClient = window.supabase
+            ? window.supabase.createClient(
+                "https://mrhcdtaqeintpeoeknlq.supabase.co",
+                "sb_publishable_8sB8D4RFrbLVYffhSkqqVQ_XrJdrG0E"
+            )
+            : null;
+        let currentUserId = null;
+
+        (async () => {
+            if (!supabaseClient) return;
+            const { data, error } = await supabaseClient.auth.getSession();
+            if (!error && data && data.session && data.session.user) {
+                currentUserId = data.session.user.id;
+            }
+        })();
+
+        async function persistLevel3Passed() {
+            localStorage.setItem('level3_passed', 'true');
+            if (!supabaseClient || !currentUserId) return;
+            const { error } = await supabaseClient
+                .from('app_state')
+                .upsert({ key: `${currentUserId}:level3_passed`, value: true, updated_at: new Date().toISOString() });
+            if (error) console.error('Failed to save Level 3 completion:', error);
+        }
+
+        function showFailOverlay() {
+            if (hasFailed || hasWon) return;
+            hasFailed = true;
+            failOverlay.classList.add('show');
+        }
+
+        // ---- Portal 激活与通关判定 ----
+        let portalActivated = false;
+        let portalConsuming = false;
+        let portalDwellStart = null;
+        let portalHintCooldownUntil = 0;
+
+        function allTreasuresCollected() {
+            return treasures.every((t) => t.collected);
+        }
+
+        // 材料消耗动画：物品栏的 flint/iron/obsidian 依次飞向 portal 并消失，
+        // 三样全部到达后，破损 portal 才换成激活的 portal
+        function consumeMaterialsAndActivatePortal() {
+            portalConsuming = true;
+
+            const portalRect = ruinedPortal.getBoundingClientRect();
+            const targetX = portalRect.left + portalRect.width / 2;
+            const targetY = portalRect.top + portalRect.height / 2;
+
+            let arrivedCount = 0;
+            treasures.forEach((t, index) => {
+                const slotImg = treasureSlotImgs[index];
+                const rect = slotImg.getBoundingClientRect();
+
+                // 槽位图标立即隐藏，由同位置起飞的飞行副本代替
+                slotImg.classList.remove('show');
+
+                const fly = document.createElement('img');
+                fly.src = t.src;
+                fly.className = 'potion-fly';
+                fly.style.left = rect.left + 'px';
+                fly.style.top = rect.top + 'px';
+                fly.style.height = rect.height + 'px';
+                document.body.appendChild(fly);
+
+                // 依次起飞，间隔 0.2s
+                setTimeout(() => {
+                    fly.style.left = (targetX - rect.width / 2) + 'px';
+                    fly.style.top = (targetY - rect.height / 2) + 'px';
+                }, index * 200);
+
+                fly.addEventListener('transitionend', () => {
+                    fly.remove();
+                    arrivedCount += 1;
+                    if (arrivedCount === treasures.length) {
+                        // 全部材料到位：破损 portal 变成激活的 portal
+                        setTimeout(() => {
+                            portalActivated = true;
+                            ruinedPortal.style.visibility = 'hidden';
+                            netherPortal.classList.add('revealed');
+                        }, 200);
+                    }
+                }, { once: true });
+            });
+        }
+
+        function playerInPortalArea(insetXRatio, insetYRatio) {
+            if (!steve || !ruinedPortal) return false;
+            const portalRect = (portalActivated ? netherPortal : ruinedPortal).getBoundingClientRect();
+            const insetX = portalRect.width * insetXRatio;
+            const insetY = portalRect.height * insetYRatio;
+            const steveRect = steve.getBoundingClientRect();
+            const cx = steveRect.left + steveRect.width / 2;
+            const cy = steveRect.top + steveRect.height / 2;
+            return (
+                cx >= portalRect.left + insetX &&
+                cx <= portalRect.right - insetX &&
+                cy >= portalRect.top + insetY &&
+                cy <= portalRect.bottom - insetY
+            );
+        }
+
+        function checkPortal() {
+            if (hasWon || hasFailed) return;
+
+            if (portalActivated) {
+                // 激活后玩家在紫色区域停留 2 秒即过关
+                if (playerInPortalArea(0.22, 0.12)) {
+                    if (portalDwellStart === null) portalDwellStart = performance.now();
+                    if (performance.now() - portalDwellStart >= 2000) showWinOverlay();
+                } else {
+                    portalDwellStart = null;
+                }
+                return;
+            }
+
+            if (!portalConsuming && allTreasuresCollected() && playerInPortalArea(0.15, 0.05)) {
+                // 材料齐了：三样材料飞向 portal，全部到达后才激活
+                consumeMaterialsAndActivatePortal();
+            } else if (!portalConsuming && !allTreasuresCollected() && playerInPortalArea(0.15, 0.05)) {
+                // 材料不够：重新提示（8 秒节流）
+                const now = performance.now();
+                if (now >= portalHintCooldownUntil) {
+                    portalHintCooldownUntil = now + 8000;
+                    showTipsToastBriefly(3000);
+                }
+            }
+        }
+
+        // ---- Steve：与 level2 相同的行走逻辑，但可以进入负复数区域 ----
+        const steve = document.getElementById('steve');
+        const steveRun = document.getElementById('steve-run');
+        const STEVE_STANDING_SRC = 'pngs/Steve_JE5.png.webp';
+        const STEVE_SNEAKING_SRC = 'pngs/Sneaking_Steve.png.webp';
+        let isSneaking = false;
+        let isMoving = false;
+        let sprintToggle = false;
+        let sprintInterval = null;
+
+        function updateSteveSprite() {
+            if (!steve) return;
+            const running = isMoving && !isSneaking && sprintToggle;
+            if (steveRun) steveRun.classList.toggle('show', running);
+            steve.classList.toggle('steve-hidden', running);
+            steve.src = isSneaking ? STEVE_SNEAKING_SRC : STEVE_STANDING_SRC;
+            steve.classList.toggle('steve-sneaking', isSneaking);
+        }
+
+        function setSneaking(sneaking) {
+            if (!steve || isSneaking === sneaking) return;
+            isSneaking = sneaking;
+            updateSteveSprite();
+        }
+
+        function setMoving(moving) {
+            if (!steve || isMoving === moving) return;
+            isMoving = moving;
+            if (moving && !sprintInterval) {
+                sprintToggle = true;
+                sprintInterval = setInterval(() => {
+                    if (!isMoving || isSneaking) return;
+                    sprintToggle = !sprintToggle;
+                    updateSteveSprite();
+                }, 100);
+            } else if (!moving && sprintInterval) {
+                clearInterval(sprintInterval);
+                sprintInterval = null;
+                sprintToggle = false;
+            }
+            updateSteveSprite();
+        }
+
+        // 活动范围：实部 ±20，虚部 ±20
+        const moveMaxX = 20 * unitPx;
+        const moveMaxY = 20 * unitPx;
+        const moveSpeed = unitPx * 0.006;
+        const STEVE_JUMPED_KEY = 'steve_has_jumped';
+
+        let posX = 0;
+        let posY = 0;
+        let jumpOffset = 0;
+        let flightUnlocked = localStorage.getItem(STEVE_JUMPED_KEY) === 'true';
+        const pressedKeys = new Set();
+        let facingRight = false;
+
+        let lastPosX = null;
+        let lastPosY = null;
+        let lastJumpOffset = null;
+
+        const coordZLine = document.getElementById('coord-z');
+
+        function updateSteveCoordLabel(totalY) {
+            if (!coordZLine || !steve) return;
+            const real = Math.round(posX / unitPx);
+            const imag = Math.round(-totalY / unitPx);
+            coordZLine.textContent = `z = ${formatComplexCoord(real, imag)}`;
+        }
+
+        function updateStevePosition() {
+            if (!steve) return;
+            const totalY = posY + jumpOffset;
+            const flip = facingRight ? ' scaleX(-1)' : '';
+            const transform = `translate(calc(-50% + ${posX}px), ${totalY}px)${flip}`;
+            steve.style.transform = transform;
+            if (steveRun) steveRun.style.transform = transform;
+            updateSteveCoordLabel(totalY);
+            // 只有史蒂夫真正移动时才跟随镜头，方便玩家自由滚动找东西
+            if (posX !== lastPosX || posY !== lastPosY || jumpOffset !== lastJumpOffset) {
+                followSteveIntoView();
+            }
+            lastPosX = posX;
+            lastPosY = posY;
+            lastJumpOffset = jumpOffset;
+        }
+
+        function playOneTimeJump() {
+            const peakHeight = unitPx * 1.1;
+            const timeToPeak = 0.225;
+            const gravity = (2 * peakHeight) / (timeToPeak * timeToPeak);
+            const initialVelocity = gravity * timeToPeak;
+            const start = performance.now();
+            function step(now) {
+                const t = (now - start) / 1000;
+                const height = initialVelocity * t - 0.5 * gravity * t * t;
+                if (height > 0) {
+                    jumpOffset = -height;
+                    updateStevePosition();
+                    requestAnimationFrame(step);
+                } else {
+                    jumpOffset = 0;
+                    updateStevePosition();
+                }
+            }
+            requestAnimationFrame(step);
+        }
+
+        function updateFacingDirection() {
+            if (pressedKeys.has('d')) facingRight = true;
+            else if (pressedKeys.has('a')) facingRight = false;
+        }
+
+        // 史蒂夫只能在屏幕中央 40% 区域内活动：碰到距边 30% 的界线就以 1:1 同速滚动页面
+        const EDGE = 0.3;
+
+        function followSteveIntoView() {
+            if (!steve || !numberLineWrap) return;
+            let steveRect = steve.getBoundingClientRect();
+
+            const wrapRect = numberLineWrap.getBoundingClientRect();
+            const marginX = numberLineWrap.clientWidth * EDGE;
+            const leftLimit = wrapRect.left + marginX;
+            const rightLimit = wrapRect.left + numberLineWrap.clientWidth - marginX;
+            if (steveRect.left < leftLimit) {
+                numberLineWrap.scrollLeft -= leftLimit - steveRect.left;
+            } else if (steveRect.right > rightLimit) {
+                numberLineWrap.scrollLeft += steveRect.right - rightLimit;
+            }
+
+            const marginY = window.innerHeight * EDGE;
+            if (steveRect.top < marginY) {
+                window.scrollBy(0, steveRect.top - marginY);
+            } else if (steveRect.bottom > window.innerHeight - marginY) {
+                window.scrollBy(0, steveRect.bottom - (window.innerHeight - marginY));
+            }
+
+            // 兜底校验：增量滚动若被浏览器（触控板动量/合成器/滚动锚定）吞掉，
+            // 史蒂夫仍可能在边界外，此时用 scrollIntoView 强制拉回视口内
+            steveRect = steve.getBoundingClientRect();
+            if (steveRect.top < 0 || steveRect.bottom > window.innerHeight) {
+                steve.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
+            }
+        }
+
+        window.addEventListener('keydown', (event) => {
+            const key = event.key.toLowerCase();
+            // 数字键 1-5 选中对应物品栏槽位
+            if (['1', '2', '3', '4', '5'].includes(event.key)) {
+                selectSlot(parseInt(event.key, 10) - 1);
+                return;
+            }
+            if (key === 'a' || key === 'd' || key === 'w' || key === 's') {
+                pressedKeys.add(key);
+                if (key === 'a' || key === 'd') setMoving(true);
+                updateFacingDirection();
+            }
+            if (event.key === 'Shift') {
+                setSneaking(true);
+            }
+            if (event.code === 'Space' || event.key === ' ') {
+                event.preventDefault();
+                if (event.repeat) return;
+                localStorage.setItem(STEVE_JUMPED_KEY, 'true');
+                flightUnlocked = true;
+                playOneTimeJump();
+            }
+        });
+
+        window.addEventListener('keyup', (event) => {
+            const key = event.key.toLowerCase();
+            if (key === 'a' || key === 'd' || key === 'w' || key === 's') {
+                pressedKeys.delete(key);
+                if (key === 'a' || key === 'd') {
+                    const stillMoving = pressedKeys.has('a') || pressedKeys.has('d');
+                    setMoving(stillMoving);
+                }
+                updateFacingDirection();
+            }
+            if (event.key === 'Shift') {
+                setSneaking(false);
+            }
+        });
+
+        let lastFrameTime = performance.now();
+        function frameLoop(now) {
+            const dt = now - lastFrameTime;
+            lastFrameTime = now;
+
+            if (pressedKeys.has('a')) posX = Math.max(posX - moveSpeed * dt, -moveMaxX);
+            if (pressedKeys.has('d')) posX = Math.min(posX + moveSpeed * dt, moveMaxX);
+
+            if (flightUnlocked) {
+                // W 向上（+i 方向），S 向下（-i 方向），都可到达 ±20
+                if (pressedKeys.has('w')) posY = Math.max(posY - moveSpeed * dt, -moveMaxY);
+                if (pressedKeys.has('s')) posY = Math.min(posY + moveSpeed * dt, moveMaxY);
+            }
+
+            updateStevePosition();
+            updateCompassTooltip();
+            checkPortal();
+            requestAnimationFrame(frameLoop);
+        }
+        requestAnimationFrame(frameLoop);
+        // 初始帧：立即渲染坐标/罗盘/耐久条，不依赖首次 rAF 触发
+        updateStevePosition();
+        updateCompassTooltip();
+        updateDurabilityBar();
+    </script>
+</body>
+</html>

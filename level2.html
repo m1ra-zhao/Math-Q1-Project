@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Level 2</title>
+    <link rel="stylesheet" href="style.css?v=20260930x">
+</head>
+<body class="level-page level2-page">
+    <div class="level-page-inner">
+        <a class="wiki-back-link" href="index.html">← Back to Home</a>
+        <div id="steve-coord" class="steve-coord-label">
+            <div id="coord-z"></div>
+            <div id="coord-conj"></div>
+        </div>
+
+        <h1 class="report-title">Level 2</h1>
+
+        <div class="number-line-wrap" aria-label="Number line">
+            <div class="number-line">
+                <div class="axis-arrow left"></div>
+                <div class="axis-arrow right"></div>
+                <div class="axis-line"></div>
+                <div class="imaginary-axis imaginary-axis-visible" id="imaginary-axis-pos" aria-label="Positive imaginary axis">
+                    <div class="imaginary-axis-line"></div>
+                    <div id="imaginary-scale" class="imaginary-scale"></div>
+                </div>
+                <div class="imaginary-axis imaginary-axis-neg" id="imaginary-axis-neg" aria-label="Negative imaginary axis">
+                    <div class="imaginary-axis-line"></div>
+                    <div id="imaginary-scale-neg" class="imaginary-scale"></div>
+                </div>
+                <div id="number-scale" class="number-scale"></div>
+                <img id="potion" class="potion-sprite" src="pngs/Potion_of_Swiftness_JE3_BE3.png.webp" alt="Potion of Swiftness">
+                <img id="steve" class="steve-sprite" src="pngs/Steve_JE5.png.webp" alt="Steve">
+                <img id="steve-run" class="steve-sprite steve-run-img" src="pngs/Sprinting_Steve.png" alt="">
+                <img id="steve-conjugate" class="steve-sprite steve-conjugate-img" src="pngs/Steve_JE5.png.webp" alt="">
+                <img id="steve-conjugate-run" class="steve-sprite steve-run-img steve-conjugate-img" src="pngs/Sprinting_Steve.png" alt="">
+                <img id="nether-portal" class="nether-portal-sprite" src="pngs/Nether_portal.png" alt="Nether Portal">
+            </div>
+        </div>
+    </div>
+
+    <div id="hotbar" class="hotbar" aria-label="Hotbar"></div>
+
+    <!-- 开场教程提示：点击物品栏/按数字键切换物品 -->
+    <div id="tutorial-toast" class="tutorial-toast">
+        <img src="pngs/tutorial.png" alt="" class="tutorial-toast-bg">
+        <img src="pngs/mouse.png" alt="" class="tutorial-toast-icon">
+        <div class="tutorial-toast-text">
+            <div class="tutorial-line-title">Click hotbar or press number<br>key to switch items.</div>
+            <div class="tutorial-line-body">Drag the items to use.</div>
+        </div>
+    </div>
+
+    <div id="advancement-toast" class="advancement-toast">
+        <img src="pngs/advancement.png" alt="" class="advancement-toast-bg">
+        <div class="advancement-toast-text">
+            <div class="advancement-line-title">Achievements Made!</div>
+            <div class="advancement-line-body">Treasure Hunter</div>
+        </div>
+    </div>
+
+    <div id="tips-toast" class="system-toast">
+        <img src="pngs/system.png" alt="" class="system-toast-bg">
+        <div class="system-toast-text">
+            <div class="system-toast-line">Hint!</div>
+            <div class="system-toast-line white-line">Don't you think this<br>snowflake looks like a "<span class="font-star">*</span>"?</div>
+        </div>
+    </div>
+
+    <!-- 第二阶段提示：首个 hint 弹回后 15s 仍未生成 conjugate 则弹出，3s 自动弹回 -->
+    <div id="tips-toast-preview" class="system-toast">
+        <img src="pngs/system.png" alt="" class="system-toast-bg">
+        <div class="system-toast-text">
+            <div class="system-toast-line">Hint!</div>
+            <div class="system-toast-line white-line">Where do you write a <span class="font-star">*</span> ...?</div>
+            <div class="system-toast-line white-line">Drag the snowflake to ...</div>
+        </div>
+    </div>
+
+    <div id="win-overlay" class="win-overlay">
+        <div class="win-text">CONGRATULATIONS!</div>
+        <button id="win-back-btn" type="button"><span>BACK</span></button>
+    </div>
+
+    <div id="advancement-toast-2" class="advancement-toast">
+        <img src="pngs/advancement.png" alt="" class="advancement-toast-bg">
+        <div class="advancement-toast-text">
+            <div class="advancement-line-title">Advancement Made!</div>
+            <div class="advancement-line-body">Double Me?</div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // 开场教程提示：8s 后弹回，或点击物品栏槽位/按数字键时弹回
+        const tutorialToast = document.getElementById('tutorial-toast');
+        if (tutorialToast) {
+            requestAnimationFrame(() => tutorialToast.classList.add('show'));
+            let tutorialDismissed = false;
+            let tutorialAutoTimer = null;
+            function dismissTutorialToast() {
+                if (tutorialDismissed) return;
+                tutorialDismissed = true;
+                tutorialToast.classList.remove('show');
+                document.removeEventListener('click', dismissTutorialToastOnSlotClick, true);
+                document.removeEventListener('keydown', dismissTutorialToastOnKey);
+                if (tutorialAutoTimer) clearTimeout(tutorialAutoTimer);
+            }
+            // 捕获阶段监听：槽位自身的 click 处理器有 stopPropagation，捕获阶段仍能收到
+            function dismissTutorialToastOnSlotClick(event) {
+                if (event.target.closest && event.target.closest('#hotbar')) dismissTutorialToast();
+            }
+            function dismissTutorialToastOnKey(event) {
+                if (event.key >= '1' && event.key <= '9') dismissTutorialToast();
+            }
+            tutorialAutoTimer = setTimeout(dismissTutorialToast, 8000);
+            document.addEventListener('click', dismissTutorialToastOnSlotClick, true);
+            document.addEventListener('keydown', dismissTutorialToastOnKey);
+        }
+
+        const scale = document.getElementById('number-scale');
+        const imaginaryScale = document.getElementById('imaginary-scale');
+        const imaginaryScaleNeg = document.getElementById('imaginary-scale-neg');
+        const imaginaryAxisPos = document.getElementById('imaginary-axis-pos');
+        const imaginaryAxisNeg = document.getElementById('imaginary-axis-neg');
+        const numberLineWrap = document.querySelector('.number-line-wrap');
+        const numberLine = document.querySelector('.number-line');
+        const unitPx = numberLine.clientWidth / 40;
+        numberLine.style.setProperty('--imaginary-unit', unitPx + 'px');
+
+        const netherPortal = document.getElementById('nether-portal');
+        if (netherPortal) {
+            // -5 - 5i：x=-5，虚部 -5（屏幕坐标向下为正）
+            const portalX = -5 * unitPx;
+            const portalY = 5 * unitPx;
+            netherPortal.style.transform = `translate(calc(-50% + ${portalX}px), ${portalY}px)`;
+        }
+
+        function centerNumberLine() {
+            if (!numberLineWrap || !numberLine) return;
+            // 让原点（number-line 的中心）对齐 wrap 视口中心
+            const wrapRect = numberLineWrap.getBoundingClientRect();
+            const lineRect = numberLine.getBoundingClientRect();
+            const originX = lineRect.left + lineRect.width / 2;
+            const wrapCenterX = wrapRect.left + numberLineWrap.clientWidth / 2;
+            numberLineWrap.scrollLeft += originX - wrapCenterX;
+        }
+
+        function alignAxisInView() {
+            const axisLine = document.querySelector('.axis-line');
+            if (!axisLine) return;
+            // 原点（实轴）对齐窗口垂直中心
+            const targetTop = window.innerHeight * 0.5;
+            window.scrollBy(0, axisLine.getBoundingClientRect().top - targetTop);
+        }
+
+        if (scale) {
+            for (let value = -20; value <= 20; value++) {
+                const tick = document.createElement('div');
+                const percent = ((value + 20) / 40) * 100;
+                tick.className = 'axis-tick';
+                tick.style.left = percent + '%';
+                tick.style.height = (value % 5 === 0 ? 25 : 12) + 'px';
+
+                const label = document.createElement('div');
+                label.className = 'axis-label';
+                label.style.left = percent + '%';
+                label.textContent = value;
+
+                scale.appendChild(tick);
+                scale.appendChild(label);
+            }
+        }
+
+        if (imaginaryScale) {
+            for (let value = 1; value <= 10; value++) {
+                const tick = document.createElement('div');
+                tick.className = 'imaginary-tick';
+                tick.style.bottom = (value * unitPx - 1) + 'px';
+
+                const label = document.createElement('div');
+                label.className = 'imaginary-label';
+                label.style.bottom = (value * unitPx - 9) + 'px';
+                label.textContent = value + 'i';
+
+                imaginaryScale.appendChild(tick);
+                imaginaryScale.appendChild(label);
+            }
+        }
+
+        if (imaginaryScaleNeg) {
+            for (let value = 1; value <= 10; value++) {
+                const tick = document.createElement('div');
+                tick.className = 'imaginary-tick';
+                tick.style.top = (value * unitPx - 1) + 'px';
+
+                const label = document.createElement('div');
+                label.className = 'imaginary-label';
+                label.style.top = (value * unitPx - 9) + 'px';
+                label.textContent = '-' + value + 'i';
+
+                imaginaryScaleNeg.appendChild(tick);
+                imaginaryScaleNeg.appendChild(label);
+            }
+        }
+
+        // 禁用浏览器滚动位置恢复，防止刷新后覆盖初始居中
+        if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+        requestAnimationFrame(() => {
+            centerNumberLine();
+            alignAxisInView();
+        });
+        window.addEventListener('load', alignAxisInView);
+        // 字体加载完成可能改变标题高度，重新对齐一次
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(alignAxisInView);
+        }
+        setTimeout(alignAxisInView, 300);
+        window.addEventListener('resize', () => {
+            centerNumberLine();
+            alignAxisInView();
+        });
+
+        // ---- Potion pickup + hotbar + advancement ----
+        const potion = document.getElementById('potion');
+        const hotbar = document.getElementById('hotbar');
+        const advancementToast = document.getElementById('advancement-toast');
+        const potionSrc = 'pngs/Potion_of_Swiftness_JE3_BE3.png.webp';
+        let potionPicked = false;
+
+        const slotEls = [];
+        const potionInSlot = document.createElement('img');
+        potionInSlot.id = 'potion-in-slot';
+        potionInSlot.className = 'potion-in-slot';
+        potionInSlot.src = potionSrc;
+        potionInSlot.alt = 'Potion of Swiftness';
+        const snowInSlot = document.createElement('img');
+        snowInSlot.id = 'snow-in-slot';
+        snowInSlot.className = 'snow-in-slot';
+        snowInSlot.src = 'pngs/snow.png';
+        snowInSlot.alt = 'Snowflake';
+        for (let i = 0; i < 9; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'hotbar-slot';
+            const slotImg = document.createElement('img');
+            slotImg.src = 'pngs/hotbar_offhand_right.png';
+            slotImg.alt = '';
+            slot.appendChild(slotImg);
+            if (i === 0) slot.appendChild(potionInSlot);
+            if (i === 1) slot.appendChild(snowInSlot);
+            // 选中高亮层（和 level3 一致的白色框）
+            const slotSel = document.createElement('img');
+            slotSel.src = 'pngs/hotbar_selection.png';
+            slotSel.alt = '';
+            slotSel.className = 'slot-selection';
+            slot.appendChild(slotSel);
+            hotbar.appendChild(slot);
+            slotEls.push(slot);
+        }
+        // 开启槽位点击（level3 同款交互）
+        hotbar.classList.add('clickable');
+
+        function pickUpPotion() {
+            if (potionPicked) return;
+            potionPicked = true;
+
+            const rect = potion.getBoundingClientRect();
+            potion.classList.add('picked');
+            hotbar.classList.add('show');
+
+            const fly = document.createElement('img');
+            fly.src = potionSrc;
+            fly.className = 'potion-fly';
+            fly.style.left = rect.left + 'px';
+            fly.style.top = rect.top + 'px';
+            fly.style.height = rect.height + 'px';
+            document.body.appendChild(fly);
+
+            const targetRect = slotEls[0].getBoundingClientRect();
+            const targetHeight = targetRect.height * 0.68;
+            const targetWidth = rect.width * (targetHeight / rect.height);
+
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    fly.style.left = (targetRect.left + targetRect.width / 2 - targetWidth / 2) + 'px';
+                    fly.style.top = (targetRect.top + targetRect.height / 2 - targetHeight / 2) + 'px';
+                    fly.style.height = targetHeight + 'px';
+                });
+            });
+
+            fly.addEventListener('transitionend', () => {
+                fly.remove();
+                potionInSlot.classList.add('show');
+                advancementToast.classList.add('show');
+                // 停留 2 秒后弹回
+                setTimeout(() => {
+                    advancementToast.classList.remove('show');
+                }, 2000);
+            }, { once: true });
+        }
+
+        // Steve picks up the potion by touching it (checked every frame)
+        function checkPotionPickup() {
+            if (potionPicked || !steve || !potion) return;
+            const s = steve.getBoundingClientRect();
+            const p = potion.getBoundingClientRect();
+            if (s.left < p.right && s.right > p.left && s.top < p.bottom && s.bottom > p.top) {
+                pickUpPotion();
+            }
+        }
+
+        // ---- Hotbar: 点击槽位或按数字键 1-9 选中，再点击屏幕 = 使用 ----
+        const drinkSound = new Audio('Drink.ogg.mp3');
+        let potionDrunk = false;
+
+        let selectedSlot = null;
+        function setSelectedSlot(idx) {
+            selectedSlot = idx;
+            slotEls.forEach((el, i) => el.classList.toggle('selected', i === idx));
+        }
+
+        function drinkPotion() {
+            if (potionDrunk) return;
+            potionDrunk = true;
+            setSelectedSlot(null);
+
+            drinkSound.currentTime = 0;
+            drinkSound.play();
+
+            potionInSlot.classList.remove('show');
+            startSpellParticles();
+
+            // 粒子持续 5 秒后停止，物品栏才出现雪花
+            setTimeout(() => {
+                stopSpellParticles();
+                snowInSlot.classList.add('show');
+                // 雪花出现 15 秒仍未生成 conjugate 则弹出提示
+                tipsToastTimer = setTimeout(showTipsToast, 15000);
+            }, 5000);
+        }
+
+        // 点击槽位切换选中（雪花/药水拖拽后的误触 click 会被抑制）
+        slotEls.forEach((el, i) => el.addEventListener('click', (event) => {
+            event.stopPropagation();
+            if (snowDragMoved) { snowDragMoved = false; return; }
+            if (potionDragMoved) { potionDragMoved = false; return; }
+            setSelectedSlot(selectedSlot === i ? null : i);
+        }));
+
+        // 数字键 1-9 切换选中
+        document.addEventListener('keydown', (event) => {
+            if (event.key >= '1' && event.key <= '9') {
+                const idx = Number(event.key) - 1;
+                setSelectedSlot(selectedSlot === idx ? null : idx);
+            }
+        });
+
+        // ---- 喝药水：选中槽位 1 后把药水拖出槽位即喝下（level2 雪花同款拖拽）----
+        let potionDragGhost = null;
+        let potionDragMoved = false;
+        potionInSlot.draggable = false;
+
+        function movePotionGhost(event, isInitial) {
+            if (!potionDragGhost) return;
+            if (!isInitial) potionDragMoved = true;
+            potionDragGhost.style.left = `${event.clientX}px`;
+            potionDragGhost.style.top = `${event.clientY}px`;
+        }
+
+        potionInSlot.addEventListener('pointerdown', (event) => {
+            // 只响应左键，且必须先选中槽位 1（药水所在槽）
+            if (event.button !== 0 || selectedSlot !== 0) return;
+            event.preventDefault();
+            potionDragMoved = false;
+            potionInSlot.setPointerCapture(event.pointerId);
+
+            potionDragGhost = document.createElement('img');
+            potionDragGhost.src = potionSrc;
+            potionDragGhost.className = 'item-drag-ghost';
+            potionDragGhost.style.height = `${potionInSlot.getBoundingClientRect().height}px`;
+            document.body.appendChild(potionDragGhost);
+            movePotionGhost(event, true);
+        });
+
+        potionInSlot.addEventListener('pointermove', movePotionGhost);
+
+        function endPotionDrag(event) {
+            if (!potionDragGhost) return;
+            potionDragGhost.remove();
+            potionDragGhost = null;
+            if (!event) return;
+            // 拖回物品栏上松手 = 取消，不喝
+            const hb = hotbar.getBoundingClientRect();
+            if (event.clientX >= hb.left && event.clientX <= hb.right &&
+                event.clientY >= hb.top && event.clientY <= hb.bottom) return;
+            drinkPotion();
+        }
+        potionInSlot.addEventListener('pointerup', endPotionDrag);
+        potionInSlot.addEventListener('pointercancel', () => endPotionDrag(null));
+
+        // ---- Snowflake spell particles (spell_0..7 frames alternating) ----
+        const SPELL_FRAME_COUNT = 8;
+        const spellFrames = [];
+        for (let i = 0; i < SPELL_FRAME_COUNT; i++) {
+            const frameImg = new Image();
+            frameImg.src = `pngs/spell_${i}.png`;
+            spellFrames.push(frameImg);
+        }
+
+        const liveSpellParticles = new Set();
+        let spellFrameIndex = 0;
+        setInterval(() => {
+            spellFrameIndex = (spellFrameIndex + 1) % SPELL_FRAME_COUNT;
+            liveSpellParticles.forEach((particle) => {
+                particle._frame = (particle._frame + 1) % SPELL_FRAME_COUNT;
+                particle.src = spellFrames[particle._frame].src;
+            });
+        }, 90);
+
+        let spellSpawnerInterval = null;
+
+        function startSpellParticles() {
+            spawnSpellParticle();
+            spellSpawnerInterval = setInterval(spawnSpellParticle, 100);
+        }
+
+        function stopSpellParticles() {
+            clearInterval(spellSpawnerInterval);
+            spellSpawnerInterval = null;
+        }
+
+        function spawnSpellParticle() {
+            if (!steve || !numberLine) return;
+            const steveHeight = steve.offsetHeight || window.innerHeight * 0.09;
+            const steveBottomY = posY + jumpOffset;
+            const fallDistance = steveHeight + 20 + Math.random() * 12;
+
+            const startX = posX + (Math.random() * 26 - 13);
+            const driftX = Math.random() * 28 - 14;
+
+            const particle = document.createElement('img');
+            particle.className = 'spell-particle';
+            particle._frame = spellFrameIndex;
+            particle.src = spellFrames[spellFrameIndex].src;
+            particle.style.left = `calc(50% + ${startX}px)`;
+            particle.style.top = `calc(50% + ${steveBottomY - steveHeight - 12}px)`;
+            particle.style.transform = 'translate(-50%, 0)';
+            numberLine.appendChild(particle);
+            liveSpellParticles.add(particle);
+
+            particle.addEventListener('transitionend', () => {
+                liveSpellParticles.delete(particle);
+                particle.remove();
+            }, { once: true });
+
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    particle.style.left = `calc(50% + ${startX + driftX}px)`;
+                    particle.style.transform = `translate(-50%, ${fallDistance}px)`;
+                    particle.style.opacity = '0';
+                });
+            });
+        }
+
+        // ---- Tips toast: snowflake unused for 20s -> hint ----
+        const tipsToast = document.getElementById('tips-toast');
+        const secondToast = document.getElementById('tips-toast-preview');
+        let tipsToastTimer = null;
+        let tipsToastTimeout = null;
+        let tipsToastShown = false;
+        let secondTipsTimer = null;
+        let secondTipsShown = false;
+        // 调试开关：true = 弹窗固定显示在右上角，方便改参数；调完改回 false
+        const HINT_FORCE_SHOW = false;
+        if (HINT_FORCE_SHOW && tipsToast) tipsToast.classList.add('show');
+
+        function showTipsToast() {
+            if (HINT_FORCE_SHOW) return;
+            if (!tipsToast || tipsToastShown || conjugateRevealed) return;
+            tipsToastShown = true;
+            tipsToast.classList.add('show');
+            // 停留 10 秒或点击页面后弹回
+            const dismissTipsToast = () => {
+                tipsToast.classList.remove('show');
+                document.removeEventListener('click', dismissTipsToast);
+                if (tipsToastTimeout) clearTimeout(tipsToastTimeout);
+                // 首个 hint 弹回后 15s 仍未生成 conjugate → 第二阶段提示，3s 自动弹回
+                if (!conjugateRevealed && !secondTipsShown) {
+                    secondTipsTimer = setTimeout(() => {
+                        if (conjugateRevealed || secondTipsShown) return;
+                        secondTipsShown = true;
+                        secondToast.classList.add('show');
+                        setTimeout(() => secondToast.classList.remove('show'), 3000);
+                    }, 15000);
+                }
+            };
+            document.addEventListener('click', dismissTipsToast);
+            tipsToastTimeout = setTimeout(dismissTipsToast, 10000);
+        }
+
+        // ---- Drag the snowflake onto the z label to reveal the conjugate ----
+        const coordLabel = document.getElementById('steve-coord');
+        const steveConjugate = document.getElementById('steve-conjugate');
+        const doubleMeToast = document.getElementById('advancement-toast-2');
+        let conjugateRevealed = false;
+        let snowDragGhost = null;
+
+        snowInSlot.draggable = false;
+
+        function moveSnowGhost(event) {
+            if (!snowDragGhost) return;
+            snowDragGhost.style.left = `${event.clientX}px`;
+            snowDragGhost.style.top = `${event.clientY}px`;
+        }
+
+        let snowDragMoved = false;
+
+        snowInSlot.addEventListener('pointerdown', (event) => {
+            if (conjugateRevealed) return;
+            // 必须先选中槽位 2（雪花所在槽）才能拖拽
+            if (selectedSlot !== 1) return;
+            // 只响应左键：右键不启动拖拽（否则右键的 pointerup 会被上下文菜单吞掉，ghost 残留导致 duplicate）
+            if (event.button !== 0) return;
+            event.preventDefault();
+            snowDragMoved = false;
+            snowInSlot.setPointerCapture(event.pointerId);
+
+            snowDragGhost = document.createElement('img');
+            snowDragGhost.src = 'pngs/snow.png';
+            snowDragGhost.className = 'snow-drag-ghost';
+            snowDragGhost.style.height = `${snowInSlot.getBoundingClientRect().height}px`;
+            document.body.appendChild(snowDragGhost);
+            moveSnowGhost(event, true);
+        });
+
+        snowInSlot.addEventListener('pointermove', moveSnowGhost);
+
+        function moveSnowGhost(event, isInitial) {
+            if (!snowDragGhost) return;
+            if (!isInitial) snowDragMoved = true;
+            snowDragGhost.style.left = `${event.clientX}px`;
+            snowDragGhost.style.top = `${event.clientY}px`;
+        }
+
+        function endSnowDrag(event) {
+            if (!snowDragGhost) return;
+            snowDragGhost.remove();
+            snowDragGhost = null;
+            if (event && !conjugateRevealed && coordLabel) {
+                // 判定区：以 z=a+bi 坐标标签为中心扩大一圈的矩形
+                const rect = coordLabel.getBoundingClientRect();
+                const pad = Math.min(rect.width, rect.height) * 0.6;
+                const dropRect = {
+                    left: rect.left - pad,
+                    right: rect.right + pad,
+                    top: rect.top - pad,
+                    bottom: rect.bottom + pad
+                };
+                const droppedOnZ = event.clientX >= dropRect.left && event.clientX <= dropRect.right &&
+                    event.clientY >= dropRect.top && event.clientY <= dropRect.bottom;
+                if (droppedOnZ) {
+                    conjugateRevealed = true;
+                    // 生成 conjugate 后取消所有 Tips 提示
+                    if (tipsToastTimer) { clearTimeout(tipsToastTimer); tipsToastTimer = null; }
+                    if (secondTipsTimer) { clearTimeout(secondTipsTimer); secondTipsTimer = null; }
+                    if (tipsToast) tipsToast.classList.remove('show');
+                    if (secondToast) secondToast.classList.remove('show');
+                    if (steveConjugate) steveConjugate.classList.add('revealed');
+                    // 镜像史蒂夫出现后 portal 才显现
+                    if (netherPortal) netherPortal.classList.add('revealed');
+                    updateSteveSprite();
+                    // 雪花已使用，从物品栏消失并取消选中
+                    snowInSlot.classList.remove('show');
+                    if (selectedSlot === 1) setSelectedSlot(null);
+                    // 出现镜像史蒂夫时才显示负虚数轴
+                    if (imaginaryAxisNeg) imaginaryAxisNeg.classList.add('imaginary-axis-visible');
+                    if (doubleMeToast) {
+                        doubleMeToast.classList.add('show');
+                        // 停留 2 秒后弹回
+                        setTimeout(() => doubleMeToast.classList.remove('show'), 2000);
+                    }
+                    updateSteveCoordLabel(posY + jumpOffset);
+                }
+            }
+        }
+
+        snowInSlot.addEventListener('pointerup', endSnowDrag);
+        snowInSlot.addEventListener('pointercancel', () => endSnowDrag(null));
+
+        // ---- Win: conjugate Steve touches the portal at -1 - 6i ----
+        const winOverlay = document.getElementById('win-overlay');
+        const winBackBtn = document.getElementById('win-back-btn');
+        let hasWon = false;
+        let portalRevealed = false;
+        let portalDwellStart = null;
+        let portalRevealedAt = null;
+
+        // 与 level1 相同的 Supabase 客户端，用于保存通关状态
+        const supabaseClient = window.supabase
+            ? window.supabase.createClient(
+                "https://mrhcdtaqeintpeoeknlq.supabase.co",
+                "sb_publishable_8sB8D4RFrbLVYffhSkqqVQ_XrJdrG0E"
+            )
+            : null;
+        let currentUserId = null;
+
+        async function getCurrentUserId() {
+            if (!supabaseClient) return null;
+            const { data, error } = await supabaseClient.auth.getSession();
+            if (error || !data || !data.session || !data.session.user) return null;
+            return data.session.user.id;
+        }
+
+        (async () => { currentUserId = await getCurrentUserId(); })();
+
+        async function persistLevel2Passed() {
+            localStorage.setItem('level2_passed', 'true');
+            if (!supabaseClient || !currentUserId) return;
+            const { error } = await supabaseClient
+                .from('app_state')
+                .upsert({ key: `${currentUserId}:level2_passed`, value: true, updated_at: new Date().toISOString() });
+            if (error) console.error('Failed to save Level 2 completion:', error);
+        }
+
+        function showWinOverlay() {
+            if (hasWon) return;
+            hasWon = true;
+            persistLevel2Passed();
+            if (winOverlay) winOverlay.classList.add('show');
+        }
+
+        function revealPortal() {
+            if (portalRevealed || !netherPortal) return;
+            portalRevealed = true;
+            portalRevealedAt = performance.now();
+            netherPortal.classList.add('revealed');
+        }
+
+        function checkPortalCollision() {
+            if (hasWon || !steveConjugate || !netherPortal) return;
+            // portal 在负半轴区域，只有镜像史蒂夫能碰到
+            if (!steveConjugate.classList.contains('revealed')) return;
+
+            if (portalRevealed) {
+                if (performance.now() - portalRevealedAt >= 3000) showWinOverlay();
+                return;
+            }
+
+            const conjRect = steveConjugate.getBoundingClientRect();
+            const portalRect = netherPortal.getBoundingClientRect();
+            // shrink the portal frame down to its inner purple area
+            const insetX = portalRect.width * 0.22;
+            const insetY = portalRect.height * 0.12;
+            const purpleLeft = portalRect.left + insetX;
+            const purpleRight = portalRect.right - insetX;
+            const purpleTop = portalRect.top + insetY;
+            const purpleBottom = portalRect.bottom - insetY;
+            const conjCenterX = conjRect.left + conjRect.width / 2;
+            const conjCenterY = conjRect.top + conjRect.height / 2;
+            const inPurpleArea = (
+                conjCenterX >= purpleLeft &&
+                conjCenterX <= purpleRight &&
+                conjCenterY >= purpleTop &&
+                conjCenterY <= purpleBottom
+            );
+
+            if (!inPurpleArea) {
+                portalDwellStart = null;
+                return;
+            }
+
+            if (portalDwellStart === null) portalDwellStart = performance.now();
+            const dwellMs = performance.now() - portalDwellStart;
+
+            if (dwellMs >= 1000) revealPortal();
+        }
+
+        if (winBackBtn) {
+            winBackBtn.addEventListener('click', () => {
+                sessionStorage.setItem('open_game_page', 'true');
+                window.location.href = 'index.html';
+            });
+        }
+
+        // ---- Steve: same walking logic as level 1 ----
+        const steve = document.getElementById('steve');
+        const steveRun = document.getElementById('steve-run');
+        const steveConjugateRun = document.getElementById('steve-conjugate-run');
+        const STEVE_STANDING_SRC = 'pngs/Steve_JE5.png.webp';
+        const STEVE_SNEAKING_SRC = 'pngs/Sneaking_Steve.png.webp';
+        let isSneaking = false;
+        let isMoving = false;
+        let sprintToggle = false;
+        let sprintInterval = null;
+
+        function updateSteveSprite() {
+            if (!steve) return;
+            const running = isMoving && !isSneaking && sprintToggle;
+            if (steveRun) steveRun.classList.toggle('show', running);
+            steve.classList.toggle('steve-hidden', running);
+            steve.src = isSneaking ? STEVE_SNEAKING_SRC : STEVE_STANDING_SRC;
+            steve.classList.toggle('steve-sneaking', isSneaking);
+
+            // 镜像史蒂夫同步奔跑/下蹲动画
+            if (steveConjugate && conjugateRevealed) {
+                if (steveConjugateRun) steveConjugateRun.classList.toggle('show', running);
+                steveConjugate.classList.toggle('steve-hidden', running);
+                steveConjugate.src = isSneaking ? STEVE_SNEAKING_SRC : STEVE_STANDING_SRC;
+                steveConjugate.classList.toggle('steve-sneaking', isSneaking);
+            }
+        }
+
+        function setSneaking(sneaking) {
+            if (!steve || isSneaking === sneaking) return;
+            isSneaking = sneaking;
+            updateSteveSprite();
+        }
+
+        function setMoving(moving) {
+            if (!steve || isMoving === moving) return;
+            isMoving = moving;
+            if (moving && !sprintInterval) {
+                sprintToggle = true;
+                sprintInterval = setInterval(() => {
+                    if (!isMoving || isSneaking) return;
+                    sprintToggle = !sprintToggle;
+                    updateSteveSprite();
+                }, 100);
+            } else if (!moving && sprintInterval) {
+                clearInterval(sprintInterval);
+                sprintInterval = null;
+                sprintToggle = false;
+            }
+            updateSteveSprite();
+        }
+
+        const moveMaxX = 20 * unitPx;
+        const moveSpeed = unitPx * 0.006;
+        const flyMaxY = 10 * unitPx;
+        const STEVE_JUMPED_KEY = 'steve_has_jumped';
+
+        let posX = 0;
+        let posY = 0;
+        let jumpOffset = 0;
+        let flightUnlocked = localStorage.getItem(STEVE_JUMPED_KEY) === 'true';
+        const pressedKeys = new Set();
+        let facingRight = false;
+
+        let lastPosX = null;
+        let lastPosY = null;
+        let lastJumpOffset = null;
+
+        const coordZLine = document.getElementById('coord-z');
+        const coordConjLine = document.getElementById('coord-conj');
+
+        function formatComplexCoord(real, imag) {
+            if (imag === 0) return `${real}`;
+            if (imag > 0) return `${real} + ${imag}i`;
+            return `${real} - ${Math.abs(imag)}i`;
+        }
+
+        function updateSteveCoordLabel(totalY) {
+            if (!coordZLine || !steve) return;
+            const real = Math.round(posX / unitPx);
+            const imag = Math.round(-totalY / unitPx);
+            coordZLine.textContent = `z = ${formatComplexCoord(real, imag)}`;
+            if (conjugateRevealed && coordConjLine) {
+                coordConjLine.textContent = `z* = ${formatComplexCoord(real, -imag)}`;
+            }
+        }
+
+        function updateStevePosition() {
+            if (!steve) return;
+            const totalY = posY + jumpOffset;
+            const flip = facingRight ? ' scaleX(-1)' : '';
+            const transform = `translate(calc(-50% + ${posX}px), ${totalY}px)${flip}`;
+            steve.style.transform = transform;
+            if (steveRun) steveRun.style.transform = transform;
+            if (conjugateRevealed && steveConjugate) {
+                // z* 关于实数轴完全对称：x 不变、y 取反、贴图上下颠倒
+                const conjTransform = `translate(calc(-50% + ${posX}px), ${-totalY}px)${flip} scaleY(-1)`;
+                steveConjugate.style.transform = conjTransform;
+                if (steveConjugateRun) steveConjugateRun.style.transform = conjTransform;
+            }
+            updateSteveCoordLabel(totalY);
+            // Only follow the camera when Steve actually moved, so the
+            // user can still scroll around freely to look for items.
+            if (posX !== lastPosX || posY !== lastPosY || jumpOffset !== lastJumpOffset) {
+                followSteveIntoView();
+            }
+            lastPosX = posX;
+            lastPosY = posY;
+            lastJumpOffset = jumpOffset;
+        }
+
+        function playOneTimeJump() {
+            const peakHeight = unitPx * 1.1;
+            const timeToPeak = 0.225;
+            const gravity = (2 * peakHeight) / (timeToPeak * timeToPeak);
+            const initialVelocity = gravity * timeToPeak;
+            const start = performance.now();
+            function step(now) {
+                const t = (now - start) / 1000;
+                const height = initialVelocity * t - 0.5 * gravity * t * t;
+                if (height > 0) {
+                    jumpOffset = -height;
+                    updateStevePosition();
+                    requestAnimationFrame(step);
+                } else {
+                    jumpOffset = 0;
+                    updateStevePosition();
+                }
+            }
+            requestAnimationFrame(step);
+        }
+
+        function updateFacingDirection() {
+            if (pressedKeys.has('d')) facingRight = true;
+            else if (pressedKeys.has('a')) facingRight = false;
+        }
+
+        // 史蒂夫只能在屏幕中央 40% 区域内活动：碰到距边 30% 的界线就以 1:1 同速滚动页面
+        const EDGE = 0.3;
+
+        function followSteveIntoView() {
+            if (!steve || !numberLineWrap) return;
+            const steveRect = steve.getBoundingClientRect();
+
+            const wrapRect = numberLineWrap.getBoundingClientRect();
+            const marginX = numberLineWrap.clientWidth * EDGE;
+            const leftLimit = wrapRect.left + marginX;
+            const rightLimit = wrapRect.left + numberLineWrap.clientWidth - marginX;
+            if (steveRect.left < leftLimit) {
+                numberLineWrap.scrollLeft -= leftLimit - steveRect.left;
+            } else if (steveRect.right > rightLimit) {
+                numberLineWrap.scrollLeft += steveRect.right - rightLimit;
+            }
+
+            const marginY = window.innerHeight * EDGE;
+            if (steveRect.top < marginY) {
+                window.scrollBy(0, steveRect.top - marginY);
+            } else if (steveRect.bottom > window.innerHeight - marginY) {
+                window.scrollBy(0, steveRect.bottom - (window.innerHeight - marginY));
+            }
+        }
+
+        window.addEventListener('keydown', (event) => {
+            const key = event.key.toLowerCase();
+            if (key === 'a' || key === 'd' || key === 'w' || key === 's') {
+                pressedKeys.add(key);
+                if (key === 'a' || key === 'd') setMoving(true);
+                updateFacingDirection();
+            }
+            if (event.key === 'Shift') {
+                setSneaking(true);
+            }
+            if (event.code === 'Space' || event.key === ' ') {
+                event.preventDefault();
+                if (event.repeat) return;
+                localStorage.setItem(STEVE_JUMPED_KEY, 'true');
+                flightUnlocked = true;
+                playOneTimeJump();
+            }
+        });
+
+        window.addEventListener('keyup', (event) => {
+            const key = event.key.toLowerCase();
+            if (key === 'a' || key === 'd' || key === 'w' || key === 's') {
+                pressedKeys.delete(key);
+                if (key === 'a' || key === 'd') {
+                    const stillMoving = pressedKeys.has('a') || pressedKeys.has('d');
+                    setMoving(stillMoving);
+                }
+                updateFacingDirection();
+            }
+            if (event.key === 'Shift') {
+                setSneaking(false);
+            }
+        });
+
+        let lastFrameTime = performance.now();
+        function frameLoop(now) {
+            const dt = now - lastFrameTime;
+            lastFrameTime = now;
+
+            if (pressedKeys.has('a')) posX = Math.max(posX - moveSpeed * dt, -moveMaxX);
+            if (pressedKeys.has('d')) posX = Math.min(posX + moveSpeed * dt, moveMaxX);
+
+            if (flightUnlocked) {
+                if (pressedKeys.has('w')) posY = Math.max(posY - moveSpeed * dt, -flyMaxY);
+                if (pressedKeys.has('s')) posY = Math.min(posY + moveSpeed * dt, 0);
+            }
+
+            updateStevePosition();
+            checkPotionPickup();
+            checkPortalCollision();
+            requestAnimationFrame(frameLoop);
+        }
+        requestAnimationFrame(frameLoop);
+    </script>
+</body>
+</html>

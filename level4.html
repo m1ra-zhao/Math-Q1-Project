@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Level 4</title>
+    <link rel="stylesheet" href="style.css?v=20261002a">
+</head>
+<body class="level-page level4-page">
+    <div class="level-page-inner">
+        <a class="wiki-back-link" href="index.html">← Back to Home</a>
+        <div id="steve-coord" class="steve-coord-label">
+            <div id="coord-z"></div>
+            <div id="coord-mod" hidden></div>
+            <div id="coord-arg" hidden></div>
+        </div>
+
+        <!-- theta 物品框：坐标下方，hotbar_selection 做外框，初始隐藏 -->
+        <div id="theta-frame" class="theta-frame">
+            <img src="pngs/item_frame.png" alt="" class="theta-frame-inner">
+            <img id="theta-img" src="pngs/theta.png" alt="theta" class="theta-frame-theta">
+            <img src="pngs/hotbar_selection.png" alt="" class="theta-frame-border">
+        </div>
+
+        <div class="number-line-wrap" aria-label="Number line">
+            <div class="number-line">
+                <div class="axis-arrow left"></div>
+                <div class="axis-arrow right"></div>
+                <div class="axis-line"></div>
+                <div class="imaginary-axis imaginary-axis-visible" id="imaginary-axis-pos" aria-label="Positive imaginary axis">
+                    <div class="imaginary-axis-line"></div>
+                    <div id="imaginary-scale" class="imaginary-scale"></div>
+                </div>
+                <div class="imaginary-axis imaginary-axis-neg imaginary-axis-visible" id="imaginary-axis-neg" aria-label="Negative imaginary axis">
+                    <div class="imaginary-axis-line"></div>
+                    <div id="imaginary-scale-neg" class="imaginary-scale"></div>
+                </div>
+                <div id="number-scale" class="number-scale"></div>
+                <!-- pumpkin pie（1005 + 1005i）与激活的 portal（-1030 - 1020i） -->
+                <img id="pumpkin-pie" class="treasure-sprite revealed" src="pngs/Pumpkin_Pie_JE2_BE2.png.webp" alt="Pumpkin Pie">
+                <img id="nether-portal" class="nether-portal-sprite revealed" src="pngs/Nether_portal.png" alt="Nether Portal">
+                <img id="steve" class="steve-sprite" src="pngs/Steve_JE5.png.webp" alt="Steve">
+                <img id="steve-run" class="steve-sprite steve-run-img" src="pngs/Sprinting_Steve.png" alt="">
+            </div>
+        </div>
+    </div>
+
+    <div id="hotbar" class="hotbar" aria-label="Hotbar"></div>
+
+    <!-- 罗盘悬浮窗：选中槽位 1 时显示 portal 相对位置 -->
+    <div id="compass-tooltip" class="compass-tooltip"></div>
+
+    <!-- 屏幕边缘坐标刻度尺：实部贴上/下边，虚部贴左/右边，方向随象限变化 -->
+    <div id="ruler-y" class="coord-ruler coord-ruler-y at-left"></div>
+    <div id="ruler-x" class="coord-ruler coord-ruler-x at-bottom"></div>
+
+    <!-- 开场/提示弹窗：文案由 JS 动态填充 -->
+    <div id="tips-toast" class="system-toast">
+        <img src="pngs/system.png" alt="" class="system-toast-bg">
+        <div class="system-toast-text">
+            <div class="system-toast-line">Hint!</div>
+            <div class="system-toast-line white-line" id="tips-toast-message">The portal is at<br>-1030 - 1020i.</div>
+        </div>
+    </div>
+
+    <!-- 成就弹窗：文案由 JS 动态填充 -->
+    <div id="advancement-toast" class="advancement-toast">
+        <img src="pngs/advancement.png" alt="" class="advancement-toast-bg">
+        <div class="advancement-toast-text">
+            <div class="advancement-line-title">Achievement Made!</div>
+            <div class="advancement-line-body" id="advancement-body">WOW! A pie!</div>
+        </div>
+    </div>
+
+    <!-- 通关画面 -->
+    <div id="win-overlay" class="win-overlay">
+        <div class="win-text">CONGRATULATIONS!</div>
+        <button id="win-back-btn" type="button"><span>BACK</span></button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const scale = document.getElementById('number-scale');
+        const imaginaryScale = document.getElementById('imaginary-scale');
+        const imaginaryScaleNeg = document.getElementById('imaginary-scale-neg');
+        const numberLineWrap = document.querySelector('.number-line-wrap');
+        const numberLine = document.querySelector('.number-line');
+        const TAU = Math.PI * 2;
+
+        // 数轴范围 ±1500（实部/虚部同）：数轴物理宽度和 level3 一样，
+        // 只是把同样的宽度划分成 3000 个单位，所以单位像素更小
+        const AXIS_RANGE = 1500;
+        const unitPx = numberLine.clientWidth / (AXIS_RANGE * 2);
+        numberLine.style.setProperty('--imaginary-unit', unitPx + 'px');
+
+        const LABEL_STEP = 250; // 长刻度/标签间隔（单位），小刻度每个单位都画
+
+        function centerSteveView(force) {
+            if (!steve || !numberLineWrap) return;
+            const steveRect = steve.getBoundingClientRect();
+            const wrapRect = numberLineWrap.getBoundingClientRect();
+            if (force) {
+                // 初始/重置视角：史蒂夫居中
+                numberLineWrap.scrollLeft += (steveRect.left + steveRect.width / 2) - (wrapRect.left + numberLineWrap.clientWidth / 2);
+                window.scrollBy(0, (steveRect.top + steveRect.height / 2) - window.innerHeight / 2);
+                return;
+            }
+            // 跟随相机：史蒂夫快碰到页面边缘时才滚动，把角色拉回边缘内侧
+            const EDGE = 0.3; // 距边缘 30% 以内触发，行走时页面与角色 1:1 同速，不会走出页面
+            const steveX = steveRect.left + steveRect.width / 2;
+            const marginX = numberLineWrap.clientWidth * EDGE;
+            const leftLimit = wrapRect.left + marginX;
+            const rightLimit = wrapRect.left + numberLineWrap.clientWidth - marginX;
+            if (steveX < leftLimit) {
+                numberLineWrap.scrollLeft -= leftLimit - steveX;
+            } else if (steveX > rightLimit) {
+                numberLineWrap.scrollLeft += steveX - rightLimit;
+            }
+            const steveY = steveRect.top + steveRect.height / 2;
+            const marginY = window.innerHeight * EDGE;
+            if (steveY < marginY) {
+                window.scrollBy(0, steveY - marginY);
+            } else if (steveY > window.innerHeight - marginY) {
+                window.scrollBy(0, steveY - (window.innerHeight - marginY));
+            }
+        }
+
+        // 实轴刻度 -1500 ~ 1500（每个单位一个小刻度）
+        if (scale) {
+            for (let value = -AXIS_RANGE; value <= AXIS_RANGE; value += 1) {
+                const percent = ((value + AXIS_RANGE) / (AXIS_RANGE * 2)) * 100;
+                const tick = document.createElement('div');
+                tick.className = 'axis-tick';
+                tick.style.left = percent + '%';
+                tick.style.height = (value % LABEL_STEP === 0 ? 25 : 12) + 'px';
+                scale.appendChild(tick);
+
+                if (value % LABEL_STEP === 0) {
+                    const label = document.createElement('div');
+                    label.className = 'axis-label';
+                    label.style.left = percent + '%';
+                    label.textContent = value;
+                    scale.appendChild(label);
+                }
+            }
+        }
+
+        // 虚轴刻度 +1i ~ +1500i / -1i ~ -1500i（每个单位一个小刻度）
+        if (imaginaryScale) {
+            for (let value = 1; value <= AXIS_RANGE; value += 1) {
+                const tick = document.createElement('div');
+                tick.className = 'imaginary-tick';
+                tick.style.bottom = (value * unitPx - 1) + 'px';
+                imaginaryScale.appendChild(tick);
+
+                if (value % LABEL_STEP === 0) {
+                    const label = document.createElement('div');
+                    label.className = 'imaginary-label';
+                    label.style.bottom = (value * unitPx - 9) + 'px';
+                    label.textContent = value + 'i';
+                    imaginaryScale.appendChild(label);
+                }
+            }
+        }
+
+        if (imaginaryScaleNeg) {
+            for (let value = 1; value <= AXIS_RANGE; value += 1) {
+                const tick = document.createElement('div');
+                tick.className = 'imaginary-tick';
+                tick.style.top = (value * unitPx - 1) + 'px';
+                imaginaryScaleNeg.appendChild(tick);
+
+                if (value % LABEL_STEP === 0) {
+                    const label = document.createElement('div');
+                    label.className = 'imaginary-label';
+                    label.style.top = (value * unitPx - 9) + 'px';
+                    label.textContent = '-' + value + 'i';
+                    imaginaryScaleNeg.appendChild(label);
+                }
+            }
+        }
+
+        // 禁用浏览器滚动位置恢复，防止刷新后覆盖初始居中
+        if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+        // ---- Portal：-1030 - 1020i，一直可见 ----
+        const netherPortal = document.getElementById('nether-portal');
+        const PORTAL_X = -1030;
+        const PORTAL_Y = -1020;
+        netherPortal.style.transform = `translate(calc(-50% + ${PORTAL_X * unitPx}px), ${-PORTAL_Y * unitPx}px)`;
+
+        // ---- Pumpkin Pie：1005 + 1005i ----
+        const pie = document.getElementById('pumpkin-pie');
+        const PIE_X = 1005;
+        const PIE_Y = 1005;
+        pie.style.left = `calc(50% + ${PIE_X * unitPx}px)`;
+        pie.style.top = `calc(50% - ${PIE_Y * unitPx}px)`;
+
+        // ---- 物品栏：9 格，槽位 1 放 compass，槽位 2 放 pumpkin pie（拾取后显示） ----
+        const hotbar = document.getElementById('hotbar');
+        const slotEls = [];
+        const SLOT_SRC = 'pngs/hotbar_offhand_right.png';
+        let selectedSlot = -1;
+
+        const compassInSlot = document.createElement('img');
+        compassInSlot.className = 'slot-item';
+        compassInSlot.src = 'pngs/Lodestone_Compass_JE2_BE2.gif';
+        compassInSlot.alt = 'Compass';
+
+        const pieInSlot = document.createElement('img');
+        pieInSlot.className = 'slot-item treasure-in-slot';
+        pieInSlot.src = 'pngs/Pumpkin_Pie_JE2_BE2.png.webp';
+        pieInSlot.alt = 'Pumpkin Pie';
+
+        for (let i = 0; i < 9; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'hotbar-slot';
+            const baseImg = document.createElement('img');
+            baseImg.src = SLOT_SRC;
+            baseImg.alt = '';
+            slot.appendChild(baseImg);
+            if (i === 0) slot.appendChild(compassInSlot);
+            if (i === 1) slot.appendChild(pieInSlot);
+            const selImg = document.createElement('img');
+            selImg.className = 'slot-selection';
+            selImg.src = 'pngs/hotbar_selection.png';
+            selImg.alt = '';
+            slot.appendChild(selImg);
+            slot.addEventListener('click', (event) => {
+                event.stopPropagation();
+                if (pieDragMoved) { pieDragMoved = false; return; } // 拖拽后的误触 click 不切换选中
+                selectSlot(i);
+            });
+            hotbar.appendChild(slot);
+            slotEls.push(slot);
+        }
+        hotbar.classList.add('show', 'clickable');
+
+        function selectSlot(index) {
+            selectedSlot = (selectedSlot === index) ? -1 : index;
+            slotEls.forEach((el, i) => el.classList.toggle('selected', i === selectedSlot));
+            updateCompassTooltipVisibility();
+            // 选中后立即刷新文本，不依赖下一帧
+            updateCompassTooltip();
+        }
+
+        // ---- 罗盘悬浮窗：实时显示 portal 与玩家的相对位置 ----
+        const compassTooltip = document.getElementById('compass-tooltip');
+
+        function updateCompassTooltipVisibility() {
+            compassTooltip.classList.toggle('show', selectedSlot === 0);
+        }
+
+        function updateCompassTooltip() {
+            if (selectedSlot !== 0) return;
+            const playerRe = posX / unitPx;
+            const playerIm = -posY / unitPx;
+            const relRe = PORTAL_X - playerRe;
+            const relIm = PORTAL_Y - playerIm;
+            compassTooltip.textContent =
+                `The portal is relative (${formatComplexCoord(Math.round(relRe), Math.round(relIm))}) to you!`;
+        }
+
+        // ---- 屏幕边缘坐标刻度尺：实部贴上/下边，虚部贴左/右边，方向随象限 ----
+        const rulerX = document.getElementById('ruler-x');
+        const rulerY = document.getElementById('ruler-y');
+        const RULER_POOL = 30;
+        const rulerXTicks = [], rulerXLabels = [], rulerYTicks = [], rulerYLabels = [];
+        for (let i = 0; i < RULER_POOL; i++) {
+            let el = document.createElement('div');
+            el.className = 'ruler-tick';
+            rulerX.appendChild(el);
+            rulerXTicks.push(el);
+            el = document.createElement('div');
+            el.className = 'ruler-label';
+            rulerX.appendChild(el);
+            rulerXLabels.push(el);
+            el = document.createElement('div');
+            el.className = 'ruler-tick';
+            rulerY.appendChild(el);
+            rulerYTicks.push(el);
+            el = document.createElement('div');
+            el.className = 'ruler-label';
+            rulerY.appendChild(el);
+            rulerYLabels.push(el);
+        }
+
+        function updateRulers() {
+            const rect = numberLine.getBoundingClientRect();
+            const wrapRect = numberLineWrap.getBoundingClientRect();
+            const originVpX = rect.left + rect.width / 2;   // 视口内原点 x
+            const originVpY = rect.top + rect.height / 2;   // 视口内原点 y
+            const real = posX / unitPx;
+            const imag = -posY / unitPx;
+
+            // 原点在玩家下方（虚部正）→ 实部尺贴下边；上方 → 贴上边
+            rulerX.classList.toggle('at-bottom', imag >= 0);
+            rulerX.classList.toggle('at-top', imag < 0);
+            // 原点在玩家左侧（实部正）→ 虚部尺贴左边；右侧 → 贴右边
+            rulerY.classList.toggle('at-left', real >= 0);
+            rulerY.classList.toggle('at-right', real < 0);
+
+            // 可见范围（限制在数轴滚动窗口内）
+            const viewLeft = Math.max(wrapRect.left, 0);
+            const viewRight = Math.min(wrapRect.left + numberLineWrap.clientWidth, window.innerWidth);
+            const viewTop = Math.max(wrapRect.top, 0);
+            const viewBottom = Math.min(wrapRect.top + numberLineWrap.clientHeight, window.innerHeight);
+
+            // 世界坐标轴进入视野时，隐藏对应的数尺（用真正的轴刻度）
+            const axisVpY = rect.top + rect.height / 2;   // 实轴在视口中的 y
+            const axisVpX = rect.left + rect.width / 2;   // 虚轴在视口中的 x
+            const realAxisVisible = axisVpY >= viewTop && axisVpY <= viewBottom;
+            const imagAxisVisible = axisVpX >= viewLeft && axisVpX <= viewRight;
+            rulerX.style.display = realAxisVisible ? 'none' : '';
+            rulerY.style.display = imagAxisVisible ? 'none' : '';
+
+            // 实部尺：可见范围内每个整数单位一个刻度
+            let k = 0;
+            const vMinX = Math.ceil((viewLeft - originVpX) / unitPx);
+            const vMaxX = Math.floor((viewRight - originVpX) / unitPx);
+            for (let v = vMinX; v <= vMaxX && k < RULER_POOL; v++, k++) {
+                const x = originVpX + v * unitPx;
+                rulerXTicks[k].style.left = x + 'px';
+                rulerXLabels[k].style.left = x + 'px';
+                rulerXTicks[k].style.visibility = 'visible';
+                rulerXLabels[k].style.visibility = 'visible';
+                rulerXLabels[k].textContent = v;
+            }
+            for (; k < RULER_POOL; k++) {
+                rulerXTicks[k].style.visibility = 'hidden';
+                rulerXLabels[k].style.visibility = 'hidden';
+            }
+
+            // 虚部尺：屏幕 y 向下，虚部向上为正
+            k = 0;
+            const vMinY = Math.ceil((originVpY - viewBottom) / unitPx);
+            const vMaxY = Math.floor((originVpY - viewTop) / unitPx);
+            for (let v = vMinY; v <= vMaxY && k < RULER_POOL; v++, k++) {
+                const y = originVpY - v * unitPx;
+                rulerYTicks[k].style.top = y + 'px';
+                rulerYLabels[k].style.top = y + 'px';
+                rulerYTicks[k].style.visibility = 'visible';
+                rulerYLabels[k].style.visibility = 'visible';
+                rulerYLabels[k].textContent = v + 'i';
+            }
+            for (; k < RULER_POOL; k++) {
+                rulerYTicks[k].style.visibility = 'hidden';
+                rulerYLabels[k].style.visibility = 'hidden';
+            }
+        }
+
+        // ---- 提示弹窗 / 成就弹窗（文案动态填充，downVh 控制文字下移量） ----
+        const tipsToast = document.getElementById('tips-toast');
+        const tipsMessage = document.getElementById('tips-toast-message');
+        const tipsTextEl = tipsMessage.parentElement;
+        let tipsTimer = null;
+
+        function showTipsToastBriefly(message, durationMs, downVh) {
+            tipsMessage.innerHTML = message;
+            tipsTextEl.style.transform = `translateY(${downVh || 0}vh)`;
+            tipsToast.classList.add('show');
+            if (tipsTimer) clearTimeout(tipsTimer);
+            tipsTimer = setTimeout(() => tipsToast.classList.remove('show'), durationMs);
+        }
+
+        const advancementToast = document.getElementById('advancement-toast');
+        const advancementBody = document.getElementById('advancement-body');
+        let advancementTimer = null;
+
+        function showAdvancement(bodyText, durationMs) {
+            advancementBody.textContent = bodyText;
+            advancementToast.classList.add('show');
+            if (advancementTimer) clearTimeout(advancementTimer);
+            advancementTimer = setTimeout(() => advancementToast.classList.remove('show'), durationMs);
+        }
+
+        // ---- Steve：极坐标移动（modulus + argument），视角始终以史蒂夫为中心 ----
+        const steve = document.getElementById('steve');
+        const steveRun = document.getElementById('steve-run');
+        const STEVE_STANDING_SRC = 'pngs/Steve_JE5.png.webp';
+        const STEVE_SNEAKING_SRC = 'pngs/Sneaking_Steve.png.webp';
+        let isSneaking = false;
+        let isMoving = false;
+        let sprintToggle = false;
+        let sprintInterval = null;
+
+        function updateSteveSprite() {
+            if (!steve) return;
+            const running = isMoving && !isSneaking && sprintToggle;
+            if (steveRun) steveRun.classList.toggle('show', running);
+            steve.classList.toggle('steve-hidden', running);
+            steve.src = isSneaking ? STEVE_SNEAKING_SRC : STEVE_STANDING_SRC;
+            steve.classList.toggle('steve-sneaking', isSneaking);
+        }
+
+        function setSneaking(sneaking) {
+            if (!steve || isSneaking === sneaking) return;
+            isSneaking = sneaking;
+            updateSteveSprite();
+        }
+
+        function setMoving(moving) {
+            if (!steve || isMoving === moving) return;
+            isMoving = moving;
+            if (moving && !sprintInterval) {
+                sprintToggle = true;
+                sprintInterval = setInterval(() => {
+                    if (!isMoving || isSneaking) return;
+                    sprintToggle = !sprintToggle;
+                    updateSteveSprite();
+                }, 100);
+            } else if (!moving && sprintInterval) {
+                clearInterval(sprintInterval);
+                sprintInterval = null;
+                sprintToggle = false;
+            }
+            updateSteveSprite();
+        }
+
+        // 极坐标状态：modulus（px）、argument（rad），初始在 1000 + 1000i
+        let modulusPx = 1000 * Math.SQRT2 * unitPx;
+        let thetaRad = Math.PI / 4;
+        let posX = Math.cos(thetaRad) * modulusPx;
+        let posY = -Math.sin(thetaRad) * modulusPx;
+        let jumpOffset = 0;
+        const pressedKeys = new Set();
+        let facingRight = false;
+        // 出生点与 pie 相邻（只差 5 个单位），首次按键后才启用拾取判定，避免进页面立即触发
+        let hasMovedOnce = false;
+
+        // 变化速率：和 level3 完全一致（moveSpeed = unitPx * 0.006）
+        const radialSpeed = unitPx * 0.006;
+        const argSpeed = 0.0002 * Math.PI / 180; // 0.0002°/ms
+
+        const coordZLine = document.getElementById('coord-z');
+        const coordModLine = document.getElementById('coord-mod');
+        const coordArgLine = document.getElementById('coord-arg');
+        let pieUsed = false;
+
+        function formatComplexCoord(real, imag) {
+            if (real === 0 && imag === 0) return '0';
+            if (imag === 0) return `${real}`;
+            if (real === 0) return `${imag}i`;
+            if (imag > 0) return `${real} + ${imag}i`;
+            return `${real} - ${Math.abs(imag)}i`;
+        }
+
+        function updateCoordLabel() {
+            if (!pieUsed) {
+                const real = Math.round(posX / unitPx);
+                const imag = Math.round(-posY / unitPx);
+                coordZLine.textContent = `z = ${formatComplexCoord(real, imag)}`;
+            } else {
+                coordModLine.textContent = `|z| = ${(modulusPx / unitPx).toFixed(2)}`;
+                coordArgLine.textContent = `θ = ${(thetaRad * 180 / Math.PI).toFixed(2)}°`;
+            }
+        }
+
+        function updateStevePosition() {
+            if (!steve) return;
+            const totalY = posY + jumpOffset;
+            const flip = facingRight ? ' scaleX(-1)' : '';
+            const transform = `translate(calc(-50% + ${posX}px), ${totalY}px)${flip}`;
+            steve.style.transform = transform;
+            if (steveRun) steveRun.style.transform = transform;
+        }
+
+        function playOneTimeJump() {
+            const peakHeight = unitPx * 1.1;
+            const timeToPeak = 0.225;
+            const gravity = (2 * peakHeight) / (timeToPeak * timeToPeak);
+            const initialVelocity = gravity * timeToPeak;
+            const start = performance.now();
+            function step(now) {
+                const t = (now - start) / 1000;
+                const height = initialVelocity * t - 0.5 * gravity * t * t;
+                if (height > 0) {
+                    jumpOffset = -height;
+                    updateStevePosition();
+                    requestAnimationFrame(step);
+                } else {
+                    jumpOffset = 0;
+                    updateStevePosition();
+                }
+            }
+            requestAnimationFrame(step);
+        }
+
+        // 活动范围保持在 ±1500 的正方形内：modulus 上限随角度变化
+        function maxModulusPx() {
+            const c = Math.max(Math.abs(Math.cos(thetaRad)), Math.abs(Math.sin(thetaRad)));
+            return (AXIS_RANGE / c) * unitPx;
+        }
+
+        let lastFrameTime = performance.now();
+        function frameLoop(now) {
+            const dt = now - lastFrameTime;
+            lastFrameTime = now;
+
+            let moved = false;
+            const prevPosX = posX;
+            const prevPosY = posY;
+
+            if (!pieUsed) {
+                // 使用 pie 前：和 level3 一样的四方向移动（对角线归一化）
+                let dxDir = 0;
+                let dyDir = 0;
+                if (pressedKeys.has('w')) dyDir -= 1;
+                if (pressedKeys.has('s')) dyDir += 1;
+                if (pressedKeys.has('a')) dxDir -= 1;
+                if (pressedKeys.has('d')) dxDir += 1;
+                const len = Math.hypot(dxDir, dyDir);
+                if (len > 0) {
+                    moved = true;
+                    // 和 level3 一致：不做对角线归一化，直接双轴叠加
+                    posX += dxDir * unitPx * 0.006 * dt;
+                    posY += dyDir * unitPx * 0.006 * dt;
+                    // 限制在 ±1500 / ±1500i 数轴范围内
+                    const limit = AXIS_RANGE * unitPx;
+                    posX = Math.min(Math.max(posX, -limit), limit);
+                    posY = Math.min(Math.max(posY, -limit), limit);
+                    // 同步极坐标，供使用 pie 后无缝接管
+                    modulusPx = Math.hypot(posX, posY);
+                    thetaRad = Math.atan2(-posY, posX);
+                }
+            } else {
+                if (pressedKeys.has('w')) { modulusPx += radialSpeed * dt; moved = true; }
+                if (pressedKeys.has('s')) { modulusPx -= radialSpeed * dt; moved = true; }
+                // a 增大 argument（逆时针），d 减小 argument（顺时针）
+                if (pressedKeys.has('a')) { thetaRad += argSpeed * dt; moved = true; }
+                if (pressedKeys.has('d')) { thetaRad -= argSpeed * dt; moved = true; }
+
+                thetaRad = ((thetaRad % TAU) + TAU) % TAU;
+                modulusPx = Math.min(Math.max(modulusPx, 0), maxModulusPx());
+
+                posX = Math.cos(thetaRad) * modulusPx;
+                posY = -Math.sin(thetaRad) * modulusPx;
+            }
+
+            // 朝向跟随屏幕水平位移
+            const dx = posX - prevPosX;
+            if (dx > 0.01) facingRight = true;
+            else if (dx < -0.01) facingRight = false;
+
+            if (moved) hasMovedOnce = true;
+
+            // 位置变了就重绘（含 theta 点击引起的瞬移）并让视角跟随
+            if (posX !== prevPosX || posY !== prevPosY) {
+                updateStevePosition();
+                centerSteveView();
+            }
+
+            updateCoordLabel();
+            updateRulers();
+            if (selectedSlot === 0) updateCompassTooltip();
+            checkPiePickup();
+            checkPortal();
+            requestAnimationFrame(frameLoop);
+        }
+
+        // ---- Pumpkin Pie：触碰拾取，飞入物品栏槽位 1（动画同 level2 药水） ----
+        let pieCollected = false;
+
+        function checkPiePickup() {
+            if (pieCollected || !hasMovedOnce || hasWon) return;
+            const steveRect = steve.getBoundingClientRect();
+            const pieRect = pie.getBoundingClientRect();
+            const overlap = steveRect.left < pieRect.right && steveRect.right > pieRect.left &&
+                steveRect.top < pieRect.bottom && steveRect.bottom > pieRect.top;
+            if (overlap) collectPie();
+        }
+
+        function collectPie() {
+            pieCollected = true;
+            showAdvancement('WOW! A pie!', 3000);
+            flyPieToSlot();
+        }
+
+        function flyPieToSlot() {
+            const rect = pie.getBoundingClientRect();
+            pie.classList.add('picked');
+
+            const fly = document.createElement('img');
+            fly.src = pie.src;
+            fly.className = 'potion-fly';
+            fly.style.left = rect.left + 'px';
+            fly.style.top = rect.top + 'px';
+            fly.style.height = rect.height + 'px';
+            document.body.appendChild(fly);
+
+            const targetRect = slotEls[1].getBoundingClientRect();
+            const targetHeight = targetRect.height * 0.68;
+            const targetWidth = rect.width * (targetHeight / rect.height);
+
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    fly.style.left = (targetRect.left + targetRect.width / 2 - targetWidth / 2) + 'px';
+                    fly.style.top = (targetRect.top + targetRect.height / 2 - targetHeight / 2) + 'px';
+                    fly.style.height = targetHeight + 'px';
+                });
+            });
+
+            fly.addEventListener('transitionend', () => {
+                fly.remove();
+                pieInSlot.classList.add('show');
+            }, { once: true });
+        }
+
+        // ---- 使用 pumpkin pie：把 pie 拖到史蒂夫身上（level2 雪花同款拖拽）----
+        let pieDragGhost = null;
+        let pieDragMoved = false;
+        pieInSlot.draggable = false;
+
+        function movePieGhost(event, isInitial) {
+            if (!pieDragGhost) return;
+            if (!isInitial) pieDragMoved = true;
+            pieDragGhost.style.left = `${event.clientX}px`;
+            pieDragGhost.style.top = `${event.clientY}px`;
+        }
+
+        pieInSlot.addEventListener('pointerdown', (event) => {
+            // 只响应左键；必须先选中槽位 2（pie 所在槽），且 pie 已拾取、未使用
+            if (event.button !== 0 || selectedSlot !== 1 || !pieCollected || pieUsed || hasWon) return;
+            event.preventDefault();
+            pieDragMoved = false;
+            pieInSlot.setPointerCapture(event.pointerId);
+
+            pieDragGhost = document.createElement('img');
+            pieDragGhost.src = 'pngs/Pumpkin_Pie_JE2_BE2.png.webp';
+            pieDragGhost.className = 'item-drag-ghost';
+            pieDragGhost.style.height = `${pieInSlot.getBoundingClientRect().height}px`;
+            document.body.appendChild(pieDragGhost);
+            movePieGhost(event, true);
+        });
+
+        pieInSlot.addEventListener('pointermove', movePieGhost);
+
+        function endPieDrag(event) {
+            if (!pieDragGhost) return;
+            pieDragGhost.remove();
+            pieDragGhost = null;
+            if (!event) return;
+            // 拖回物品栏上松手 = 取消，不使用
+            const hb = hotbar.getBoundingClientRect();
+            if (event.clientX >= hb.left && event.clientX <= hb.right &&
+                event.clientY >= hb.top && event.clientY <= hb.bottom) return;
+            // 任意位置松手 = 吃下南瓜派（与原"点击屏幕使用"语义一致）
+            usePie();
+        }
+        pieInSlot.addEventListener('pointerup', endPieDrag);
+        pieInSlot.addEventListener('pointercancel', () => endPieDrag(null));
+
+        const thetaFrame = document.getElementById('theta-frame');
+        const thetaImg = document.getElementById('theta-img');
+        let thetaRot = 0;
+        let thetaUsed = false;
+
+        function usePie() {
+            pieUsed = true;
+            pieInSlot.classList.remove('show');
+            showAdvancement('A pi with wine?!', 3000);
+
+            // 隐藏 z=a+bi，显示 |z| 与 θ
+            coordZLine.hidden = true;
+            coordModLine.hidden = false;
+            coordArgLine.hidden = false;
+            updateCoordLabel();
+
+            // 显示 theta 物品框，起始旋转度数 = 当前 argument
+            thetaRot = thetaRad * 180 / Math.PI;
+            applyThetaRotation();
+            thetaFrame.classList.add('show');
+
+            // 吃下南瓜派 30s 后仍未点击 theta：提示
+            setTimeout(() => {
+                if (!thetaUsed && !hasWon) {
+                    showTipsToastBriefly('Try to click the theta in<br>the item frame!', 3000, 1.7);
+                }
+            }, 30000);
+        }
+
+        function applyThetaRotation() {
+            // 初始（argument 45°）显示为顺时针 45°；之后每点一次逆时针转 45°
+            thetaImg.style.transform = `translate(-50%, -50%) rotate(${90 - thetaRot}deg)`;
+        }
+
+        // 点击 theta：逆时针旋转 45°，人物 argument 变成 theta 的度数（modulus 不变）
+        thetaFrame.addEventListener('click', (event) => {
+            event.stopPropagation();
+            thetaUsed = true;
+            thetaRot = (thetaRot + 45) % 360;
+            applyThetaRotation();
+            thetaRad = thetaRot * Math.PI / 180;
+            // 立即重算位置并把史蒂夫放回页面正中间
+            posX = Math.cos(thetaRad) * modulusPx;
+            posY = -Math.sin(thetaRad) * modulusPx;
+            updateStevePosition();
+            centerSteveView(true);
+        });
+
+        // ---- 通关画面 ----
+        const winOverlay = document.getElementById('win-overlay');
+        let hasWon = false;
+
+        document.getElementById('win-back-btn').addEventListener('click', () => {
+            sessionStorage.setItem('open_game_page', 'true');
+            window.location.href = 'index.html';
+        });
+
+        function showWinOverlay() {
+            if (hasWon) return;
+            hasWon = true;
+            persistLevel4Passed();
+            winOverlay.classList.add('show');
+        }
+
+        // 与 level1/2/3 相同的 Supabase 客户端，用于保存通关状态
+        const supabaseClient = window.supabase
+            ? window.supabase.createClient(
+                "https://mrhcdtaqeintpeoeknlq.supabase.co",
+                "sb_publishable_8sB8D4RFrbLVYffhSkqqVQ_XrJdrG0E"
+            )
+            : null;
+        let currentUserId = null;
+
+        (async () => {
+            if (!supabaseClient) return;
+            const { data, error } = await supabaseClient.auth.getSession();
+            if (!error && data && data.session && data.session.user) {
+                currentUserId = data.session.user.id;
+            }
+        })();
+
+        async function persistLevel4Passed() {
+            localStorage.setItem('level4_passed', 'true');
+            if (!supabaseClient || !currentUserId) return;
+            const { error } = await supabaseClient
+                .from('app_state')
+                .upsert({ key: `${currentUserId}:level4_passed`, value: true, updated_at: new Date().toISOString() });
+            if (error) console.error('Failed to save Level 4 completion:', error);
+        }
+
+        // ---- Portal 通关判定：碰到紫色区域后停留 3 秒才过关 ----
+        let portalDwellStart = null;
+
+        function playerInPortalArea(insetXRatio, insetYRatio) {
+            if (!steve || !netherPortal) return false;
+            const portalRect = netherPortal.getBoundingClientRect();
+            const insetX = portalRect.width * insetXRatio;
+            const insetY = portalRect.height * insetYRatio;
+            const steveRect = steve.getBoundingClientRect();
+            const cx = steveRect.left + steveRect.width / 2;
+            const cy = steveRect.top + steveRect.height / 2;
+            return (
+                cx >= portalRect.left + insetX &&
+                cx <= portalRect.right - insetX &&
+                cy >= portalRect.top + insetY &&
+                cy <= portalRect.bottom - insetY
+            );
+        }
+
+        function checkPortal() {
+            if (hasWon) return;
+            if (playerInPortalArea(0.22, 0.12)) {
+                // 进入紫色区域后停留满 3 秒才过关，中途离开则重新计时
+                if (portalDwellStart === null) portalDwellStart = performance.now();
+                if (performance.now() - portalDwellStart >= 3000) showWinOverlay();
+            } else {
+                portalDwellStart = null;
+            }
+        }
+
+        // ---- 键盘：和 level3 一样的按键 ----
+        window.addEventListener('keydown', (event) => {
+            // 数字键 1-9 选中对应物品栏槽位
+            if (event.key >= '1' && event.key <= '9') {
+                selectSlot(parseInt(event.key, 10) - 1);
+                return;
+            }
+            const key = event.key.toLowerCase();
+            if (key === 'a' || key === 'd' || key === 'w' || key === 's') {
+                pressedKeys.add(key);
+                // 走路动画只跟左右移动有关（与 level3 一致），上下移动不播放
+                if (key === 'a' || key === 'd') setMoving(true);
+            }
+            if (event.key === 'Shift') {
+                setSneaking(true);
+            }
+            if (event.code === 'Space' || event.key === ' ') {
+                event.preventDefault();
+                if (event.repeat) return;
+                playOneTimeJump();
+            }
+        });
+
+        window.addEventListener('keyup', (event) => {
+            const key = event.key.toLowerCase();
+            if (key === 'a' || key === 'd' || key === 'w' || key === 's') {
+                pressedKeys.delete(key);
+                // 只按左右键判断是否停止走路动画（与 level3 一致）
+                const stillMoving = ['a', 'd'].some((k) => pressedKeys.has(k));
+                setMoving(stillMoving);
+            }
+            if (event.key === 'Shift') {
+                setSneaking(false);
+            }
+        });
+
+        // 开场 Hint 弹窗：5 秒后弹回
+        setTimeout(() => showTipsToastBriefly('The portal is at<br>-1030 - 1020i.', 5000, 1), 400);
+
+        requestAnimationFrame(frameLoop);
+        // 初始帧：立即渲染坐标与视角
+        updateStevePosition();
+        updateCoordLabel();
+        requestAnimationFrame(() => centerSteveView(true));
+        window.addEventListener('load', () => centerSteveView(true));
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(() => centerSteveView(true));
+        }
+        setTimeout(() => centerSteveView(true), 300);
+        window.addEventListener('resize', () => centerSteveView(true));
+    </script>
+</body>
+</html>

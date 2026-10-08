@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Level 1</title>
+    <link rel="stylesheet" href="style.css?v=20260930x">
+</head>
+<body class="level-page">
+    <div class="level-page-inner">
+        <a class="wiki-back-link" href="index.html">← Back to Home</a>
+        <div id="steve-coord" class="steve-coord-label"></div>
+
+        <div id="advancement-toast" class="advancement-toast">
+            <img src="pngs/advancement.png" alt="" class="advancement-toast-bg">
+            <div class="advancement-toast-text">
+                <div class="advancement-line-title">Advancement Made!</div>
+                <div class="advancement-line-body">Isn't It Imaginary Number?</div>
+            </div>
+        </div>
+
+        <div id="tutorial-toast" class="tutorial-toast">
+            <img src="pngs/tutorial.png" alt="" class="tutorial-toast-bg">
+            <img src="pngs/movement_keys.png" alt="" class="tutorial-toast-icon">
+            <div class="tutorial-toast-text">
+                <div class="tutorial-line-title">Press A, D to move</div>
+                <div class="tutorial-line-body">Explore more movements!</div>
+            </div>
+        </div>
+
+        <div id="system-toast" class="system-toast">
+            <img src="pngs/system.png" alt="" class="system-toast-bg">
+            <div class="system-toast-text">
+                <div class="system-toast-line">Go to z = -7 + 6i</div>
+                <div class="system-toast-line">to unlock a surprise!</div>
+            </div>
+        </div>
+
+        <div class="number-line-wrap" aria-label="Number line">
+            <div class="number-line">
+                <div class="axis-arrow left"></div>
+                <div class="axis-arrow right"></div>
+                <div class="axis-line"></div>
+                <div class="imaginary-axis" id="imaginary-axis" aria-label="Imaginary axis">
+                    <div class="imaginary-axis-line"></div>
+                    <div id="imaginary-scale" class="imaginary-scale"></div>
+                </div>
+                <div id="number-scale" class="number-scale"></div>
+                <img id="steve" class="steve-sprite" src="pngs/Steve_JE5.png.webp" alt="Steve">
+                <img id="steve-run" class="steve-sprite steve-run-img" src="pngs/Sprinting_Steve.png" alt="">
+                <img id="nether-portal" class="nether-portal-sprite" src="pngs/Nether_portal.png" alt="Nether Portal">
+            </div>
+        </div>
+
+        <div id="win-overlay" class="win-overlay">
+            <div class="win-text">CONGRATULATIONS!</div>
+            <button id="win-back-btn" type="button"><span>BACK</span></button>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script>
+            const scale = document.getElementById('number-scale');
+            const imaginaryScale = document.getElementById('imaginary-scale');
+            const numberLineWrap = document.querySelector('.number-line-wrap');
+            const numberLine = document.querySelector('.number-line');
+            const unitPx = numberLine.clientWidth / 40;
+            numberLine.style.setProperty('--imaginary-unit', unitPx + 'px');
+
+            function centerNumberLine() {
+                if (!numberLineWrap || !numberLine) return;
+                const middleScrollLeft = (numberLine.scrollWidth - numberLineWrap.clientWidth) / 2;
+                numberLineWrap.scrollLeft = Math.max(0, middleScrollLeft);
+            }
+
+            function alignAxisInView() {
+                const axisLine = document.querySelector('.axis-line');
+                if (!axisLine) return;
+                const targetTop = window.innerHeight * 0.75;
+                window.scrollBy(0, axisLine.getBoundingClientRect().top - targetTop);
+            }
+
+            if (scale) {
+                for (let value = -20; value <= 20; value++) {
+                    const tick = document.createElement('div');
+                    const percent = ((value + 20) / 40) * 100;
+                    tick.className = 'axis-tick';
+                    tick.style.left = percent + '%';
+                    tick.style.height = (value % 5 === 0 ? 25 : 12) + 'px';
+
+                    const label = document.createElement('div');
+                    label.className = 'axis-label';
+                    label.style.left = percent + '%';
+                    label.textContent = value;
+
+                    scale.appendChild(tick);
+                    scale.appendChild(label);
+                }
+            }
+
+            if (imaginaryScale) {
+                for (let value = 1; value <= 10; value++) {
+                    const tick = document.createElement('div');
+                    tick.className = 'imaginary-tick';
+                    tick.style.bottom = (value * unitPx - 1) + 'px';
+
+                    const label = document.createElement('div');
+                    label.className = 'imaginary-label';
+                    label.style.bottom = (value * unitPx - 9) + 'px';
+                    label.textContent = value + 'i';
+
+                    imaginaryScale.appendChild(tick);
+                    imaginaryScale.appendChild(label);
+                }
+            }
+
+            requestAnimationFrame(() => {
+                centerNumberLine();
+                alignAxisInView();
+            });
+            window.addEventListener('load', alignAxisInView);
+            window.addEventListener('resize', () => {
+                centerNumberLine();
+                alignAxisInView();
+            });
+
+            const netherPortal = document.getElementById('nether-portal');
+            if (netherPortal) {
+                const portalX = -7 * unitPx;
+                const portalY = -6 * unitPx;
+                // 在单位坐标基础上整体下移 3vh
+                netherPortal.style.transform = `translate(calc(-50% + ${portalX}px), calc(${portalY}px + 3vh))`;
+            }
+
+            const imaginaryAxis = document.getElementById('imaginary-axis');
+            const IMAGINARY_AXIS_KEY = 'imaginary_axis_revealed';
+            const ADVANCEMENT_SEEN_KEY = 'advancement_toast_seen';
+            const supabaseClient = window.supabase
+                ? window.supabase.createClient(
+                    "https://mrhcdtaqeintpeoeknlq.supabase.co",
+                    "sb_publishable_8sB8D4RFrbLVYffhSkqqVQ_XrJdrG0E"
+                )
+                : null;
+
+            function showImaginaryAxis(showToast = true) {
+                if (imaginaryAxis) imaginaryAxis.classList.add('imaginary-axis-visible');
+                if (showToast) showAdvancementToast();
+            }
+
+            let priorlyRevealedResolve;
+            const priorlyRevealedPromise = new Promise((resolve) => { priorlyRevealedResolve = resolve; });
+
+            const tutorialToast = document.getElementById('tutorial-toast');
+            if (tutorialToast) {
+                requestAnimationFrame(() => tutorialToast.classList.add('show'));
+
+                function dismissTutorialToast() {
+                    tutorialToast.classList.remove('show');
+                    document.removeEventListener('click', dismissTutorialToast);
+                    document.removeEventListener('keydown', dismissTutorialToastOnKey);
+                    priorlyRevealedPromise.then((alreadyTriggered) => {
+                        if (alreadyTriggered) setTimeout(showSystemToast, 1000);
+                    });
+                }
+
+                function dismissTutorialToastOnKey(event) {
+                    const key = event.key.toLowerCase();
+                    if (key === 'a' || key === 'd') dismissTutorialToast();
+                }
+
+                document.addEventListener('click', dismissTutorialToast);
+                document.addEventListener('keydown', dismissTutorialToastOnKey);
+            }
+
+            const advancementToast = document.getElementById('advancement-toast');
+            let advancementToastTimeout = null;
+            let advancementSeen = false;
+            function showAdvancementToast() {
+                if (!advancementToast || advancementSeen) return;
+                advancementSeen = true;
+                persistStateFlag(ADVANCEMENT_SEEN_KEY);
+                advancementToast.classList.add('show');
+                if (advancementToastTimeout) clearTimeout(advancementToastTimeout);
+                advancementToastTimeout = setTimeout(() => {
+                    advancementToast.classList.remove('show');
+                    showSystemToast();
+                }, 5000);
+            }
+
+            const systemToast = document.getElementById('system-toast');
+            let systemToastShown = false;
+            function showSystemToast() {
+                if (!systemToast || systemToastShown) return;
+                systemToastShown = true;
+                systemToast.classList.add('show');
+                document.addEventListener('click', function dismissSystemToast() {
+                    systemToast.classList.remove('show');
+                    document.removeEventListener('click', dismissSystemToast);
+                });
+            }
+
+            async function fetchStateFlag(key) {
+                if (!supabaseClient || !currentUserId) return false;
+                const { data, error } = await supabaseClient
+                    .from('app_state')
+                    .select('value')
+                    .eq('key', `${currentUserId}:${key}`)
+                    .maybeSingle();
+                if (error) {
+                    console.error('Failed to load shared state:', error);
+                    return false;
+                }
+                return !!(data && data.value);
+            }
+
+            async function persistStateFlag(key) {
+                if (key === IMAGINARY_AXIS_KEY) {
+                    localStorage.setItem(getLocalStateKey(key), 'true');
+                }
+                if (!supabaseClient || !currentUserId) return;
+                const { error } = await supabaseClient
+                    .from('app_state')
+                    .upsert({ key: `${currentUserId}:${key}`, value: true, updated_at: new Date().toISOString() });
+                if (error) {
+                    console.error('Failed to save shared state:', error);
+                }
+            }
+
+            function revealImaginaryAxis(event) {
+                if (event.code !== 'Space' && event.key !== ' ') return;
+                event.preventDefault();
+                showImaginaryAxis();
+                persistStateFlag(IMAGINARY_AXIS_KEY);
+                window.removeEventListener('keydown', revealImaginaryAxis);
+            }
+
+            let currentUserId = null;
+
+            function getLocalStateKey(key) {
+                return currentUserId ? `${currentUserId}:${key}` : key;
+            }
+
+            async function getCurrentUserId() {
+                if (!supabaseClient) return null;
+                const { data, error } = await supabaseClient.auth.getSession();
+                if (error || !data || !data.session || !data.session.user) return null;
+                return data.session.user.id;
+            }
+
+            (async () => {
+                currentUserId = await getCurrentUserId();
+                const locallyRevealed = localStorage.getItem(getLocalStateKey(IMAGINARY_AXIS_KEY)) === 'true';
+                const [revealed, seen] = await Promise.all([fetchStateFlag(IMAGINARY_AXIS_KEY), fetchStateFlag(ADVANCEMENT_SEEN_KEY)]);
+                advancementSeen = seen;
+                if (revealed) {
+                    localStorage.setItem(getLocalStateKey(IMAGINARY_AXIS_KEY), 'true');
+                    showImaginaryAxis(false);
+                    priorlyRevealedResolve(true);
+                } else if (currentUserId) {
+                    window.addEventListener('keydown', revealImaginaryAxis);
+                    priorlyRevealedResolve(false);
+                } else if (locallyRevealed) {
+                    showImaginaryAxis(false);
+                    priorlyRevealedResolve(true);
+                } else {
+                    window.addEventListener('keydown', revealImaginaryAxis);
+                    priorlyRevealedResolve(false);
+                }
+            })();
+
+            const steve = document.getElementById('steve');
+            const steveRun = document.getElementById('steve-run');
+            const STEVE_STANDING_SRC = 'pngs/Steve_JE5.png.webp';
+            const STEVE_SNEAKING_SRC = 'pngs/Sneaking_Steve.png.webp';
+            let isSneaking = false;
+            let isMoving = false;
+            let sprintToggle = false;
+            let sprintInterval = null;
+
+            function updateSteveSprite() {
+                if (!steve) return;
+                const running = isMoving && !isSneaking && sprintToggle;
+                if (steveRun) steveRun.classList.toggle('show', running);
+                steve.classList.toggle('steve-hidden', running);
+                steve.src = isSneaking ? STEVE_SNEAKING_SRC : STEVE_STANDING_SRC;
+                steve.classList.toggle('steve-sneaking', isSneaking);
+            }
+
+            function setSneaking(sneaking) {
+                if (!steve || isSneaking === sneaking) return;
+                isSneaking = sneaking;
+                updateSteveSprite();
+            }
+
+            function setMoving(moving) {
+                if (!steve || isMoving === moving) return;
+                isMoving = moving;
+                if (moving && !sprintInterval) {
+                    sprintToggle = true;
+                    sprintInterval = setInterval(() => {
+                        if (!isMoving || isSneaking) return;
+                        sprintToggle = !sprintToggle;
+                        updateSteveSprite();
+                    }, 100);
+                } else if (!moving && sprintInterval) {
+                    clearInterval(sprintInterval);
+                    sprintInterval = null;
+                    sprintToggle = false;
+                }
+                updateSteveSprite();
+            }
+
+            const STEVE_JUMPED_KEY = 'steve_has_jumped';
+            const moveMaxX = 20 * unitPx;
+            const flyMaxY = 10 * unitPx;
+            const moveSpeed = unitPx * 0.006;
+
+            let posX = 0;
+            let posY = 0;
+            let jumpOffset = 0;
+            let flightUnlocked = localStorage.getItem(STEVE_JUMPED_KEY) === 'true';
+            const pressedKeys = new Set();
+            let facingRight = false;
+
+            function updateStevePosition() {
+                if (!steve) return;
+                const totalY = posY + jumpOffset;
+                const flip = facingRight ? ' scaleX(-1)' : '';
+                const transform = `translate(calc(-50% + ${posX}px), ${totalY}px)${flip}`;
+                steve.style.transform = transform;
+                if (steveRun) steveRun.style.transform = transform;
+                updateSteveCoordLabel(totalY);
+                followSteveIntoView();
+            }
+
+            function updateFacingDirection() {
+                if (pressedKeys.has('d')) facingRight = true;
+                else if (pressedKeys.has('a')) facingRight = false;
+            }
+
+            const steveCoordLabel = document.getElementById('steve-coord');
+
+            function formatComplexCoord(real, imag) {
+                if (imag === 0) return `${real}`;
+                if (imag > 0) return `${real} + ${imag}i`;
+                return `${real} - ${Math.abs(imag)}i`;
+            }
+
+            function updateSteveCoordLabel(totalY) {
+                if (!steveCoordLabel || !steve) return;
+                const real = Math.round(posX / unitPx);
+                const imag = Math.round(-totalY / unitPx);
+                steveCoordLabel.textContent = `z = ${formatComplexCoord(real, imag)}`;
+            }
+
+            const scrollMargin = 60;
+
+            function followSteveIntoView() {
+                if (!steve || !numberLineWrap) return;
+                const steveRect = steve.getBoundingClientRect();
+
+                const wrapRect = numberLineWrap.getBoundingClientRect();
+                if (steveRect.left < wrapRect.left + scrollMargin) {
+                    numberLineWrap.scrollLeft += steveRect.left - (wrapRect.left + scrollMargin);
+                } else if (steveRect.right > wrapRect.right - scrollMargin) {
+                    numberLineWrap.scrollLeft += steveRect.right - (wrapRect.right - scrollMargin);
+                }
+
+                if (steveRect.top < scrollMargin) {
+                    window.scrollBy(0, steveRect.top - scrollMargin);
+                } else if (steveRect.bottom > window.innerHeight - scrollMargin) {
+                    window.scrollBy(0, steveRect.bottom - (window.innerHeight - scrollMargin));
+                }
+            }
+
+            function playOneTimeJump() {
+                const peakHeight = unitPx * 1.1;
+                const timeToPeak = 0.225;
+                const gravity = (2 * peakHeight) / (timeToPeak * timeToPeak);
+                const initialVelocity = gravity * timeToPeak;
+                const start = performance.now();
+                function step(now) {
+                    const t = (now - start) / 1000;
+                    const height = initialVelocity * t - 0.5 * gravity * t * t;
+                    if (height > 0) {
+                        jumpOffset = -height;
+                        updateStevePosition();
+                        requestAnimationFrame(step);
+                    } else {
+                        jumpOffset = 0;
+                        updateStevePosition();
+                    }
+                }
+                requestAnimationFrame(step);
+            }
+
+            window.addEventListener('keydown', (event) => {
+                const key = event.key.toLowerCase();
+                if (key === 'a' || key === 'd' || key === 'w' || key === 's') {
+                    pressedKeys.add(key);
+                    if (key === 'a' || key === 'd') setMoving(true);
+                    updateFacingDirection();
+                }
+                if (event.key === 'Shift') {
+                    setSneaking(true);
+                }
+                if (event.code === 'Space' || event.key === ' ') {
+                    event.preventDefault();
+                    if (event.repeat) return;
+                    localStorage.setItem(STEVE_JUMPED_KEY, 'true');
+                    flightUnlocked = true;
+                    playOneTimeJump();
+                }
+            });
+
+            window.addEventListener('keyup', (event) => {
+                const key = event.key.toLowerCase();
+                if (key === 'a' || key === 'd' || key === 'w' || key === 's') {
+                    pressedKeys.delete(key);
+                    if (key === 'a' || key === 'd') {
+                        const stillMoving = pressedKeys.has('a') || pressedKeys.has('d');
+                        setMoving(stillMoving);
+                    }
+                    updateFacingDirection();
+                }
+                if (event.key === 'Shift') {
+                    setSneaking(false);
+                }
+            });
+
+            let lastFrameTime = performance.now();
+            function frameLoop(now) {
+                const dt = now - lastFrameTime;
+                lastFrameTime = now;
+
+                if (pressedKeys.has('a')) posX = Math.max(posX - moveSpeed * dt, -moveMaxX);
+                if (pressedKeys.has('d')) posX = Math.min(posX + moveSpeed * dt, moveMaxX);
+
+                if (flightUnlocked) {
+                    if (pressedKeys.has('w')) posY = Math.max(posY - moveSpeed * dt, -flyMaxY);
+                    if (pressedKeys.has('s')) posY = Math.min(posY + moveSpeed * dt, 0);
+                }
+
+                updateStevePosition();
+                checkPortalCollision();
+                requestAnimationFrame(frameLoop);
+            }
+            requestAnimationFrame(frameLoop);
+
+            const winOverlay = document.getElementById('win-overlay');
+            const winBackBtn = document.getElementById('win-back-btn');
+            let hasWon = false;
+            let portalRevealed = false;
+            let portalDwellStart = null;
+            let portalRevealedAt = null;
+
+            function showWinOverlay() {
+                if (hasWon) return;
+                hasWon = true;
+                persistLevel1Passed();
+                if (winOverlay) winOverlay.classList.add('show');
+            }
+
+            async function persistLevel1Passed() {
+                localStorage.setItem('level1_passed', 'true');
+                if (!supabaseClient || !currentUserId) return;
+                const { error } = await supabaseClient
+                    .from('app_state')
+                    .upsert({ key: `${currentUserId}:level1_passed`, value: true, updated_at: new Date().toISOString() });
+                if (error) console.error('Failed to save Level 1 completion:', error);
+            }
+
+            function revealPortal() {
+                if (portalRevealed || !netherPortal) return;
+                portalRevealed = true;
+                portalRevealedAt = performance.now();
+                netherPortal.classList.add('revealed');
+            }
+
+            function checkPortalCollision() {
+                if (hasWon || !steve || !netherPortal) return;
+
+                if (portalRevealed) {
+                    if (performance.now() - portalRevealedAt >= 3000) showWinOverlay();
+                    return;
+                }
+
+                const steveRect = steve.getBoundingClientRect();
+                const portalRect = netherPortal.getBoundingClientRect();
+                // shrink the portal frame down to its inner purple area
+                const insetX = portalRect.width * 0.22;
+                const insetY = portalRect.height * 0.12;
+                const purpleLeft = portalRect.left + insetX;
+                const purpleRight = portalRect.right - insetX;
+                const purpleTop = portalRect.top + insetY;
+                const purpleBottom = portalRect.bottom - insetY;
+                const steveCenterX = steveRect.left + steveRect.width / 2;
+                const steveCenterY = steveRect.top + steveRect.height / 2;
+                const inPurpleArea = (
+                    steveCenterX >= purpleLeft &&
+                    steveCenterX <= purpleRight &&
+                    steveCenterY >= purpleTop &&
+                    steveCenterY <= purpleBottom
+                );
+
+                if (!inPurpleArea) {
+                    portalDwellStart = null;
+                    return;
+                }
+
+                if (portalDwellStart === null) portalDwellStart = performance.now();
+                const dwellMs = performance.now() - portalDwellStart;
+
+                if (dwellMs >= 1000) revealPortal();
+            }
+
+            if (winBackBtn) {
+                winBackBtn.addEventListener('click', () => {
+                    sessionStorage.setItem('open_game_page', 'true');
+                    window.location.href = 'index.html';
+                });
+            }
+        </script>
+    </div>
+</body>
+</html>
