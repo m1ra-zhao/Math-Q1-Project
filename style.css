@@ -24,7 +24,7 @@
     flex-direction: column;
     align-items: center;
 
-    background-image: url("pngs/Background.jpg");
+    background-image: url("pngs/background.jpg");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -115,7 +115,7 @@
 }
 
 body {
-    background-image: url("pngs/Background.jpg");
+    background-image: url("pngs/background.jpg");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -456,7 +456,7 @@ p {
     z-index: 1100;
     align-items: center;
     justify-content: center;
-    background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url("pngs/Background.jpg");
+    background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url("pngs/background.jpg");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
