@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Level 6</title>
-    <link rel="stylesheet" href="style.css?v=20261003ak">
+    <link rel="stylesheet" href="style.css?v=20261010e">
 </head>
 <body class="level-page level6-page">
     <div class="level-page-inner">
@@ -76,6 +76,16 @@
         <div class="advancement-toast-text">
             <div class="advancement-line-title">Advancement Made!</div>
             <div class="advancement-line-body">The End.</div>
+        </div>
+    </div>
+
+    <!-- 右上角成就：Free the End（龙首图标，末影龙死亡时弹出，3s 后弹回） -->
+    <div id="advancement-freeend" class="advancement-toast with-icon">
+        <img src="pngs/advancement.png" alt="" class="advancement-toast-bg">
+        <img src="pngs/Dragon_Head.png" alt="" class="advancement-toast-item-icon">
+        <div class="advancement-toast-text">
+            <div class="advancement-line-title">Advancement Made!</div>
+            <div class="advancement-line-body">Free the End.</div>
         </div>
     </div>
 
@@ -525,6 +535,7 @@
             dragonLabel.classList.add('dead');
             activatePortal();
             showToast(advTheEnd);
+            showToast(advFreeEnd, 3000);
         }
 
         // ================= 箭矢（平抛轨迹 + 靠近落点减速） =================
@@ -601,6 +612,7 @@
         // ================= 首次命中 → Take Aim / Hints =================
         const advTakeAim = document.getElementById('advancement-takeaim');
         const advTheEnd = document.getElementById('advancement-theend');
+        const advFreeEnd = document.getElementById('advancement-freeend');
         const hintsToast = document.getElementById('hints-toast');
         let firstHitDone = false;
         let hintsTimer = null;

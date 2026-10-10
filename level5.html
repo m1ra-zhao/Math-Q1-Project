@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Level 5</title>
-    <link rel="stylesheet" href="style.css?v=20261003b">
+    <link rel="stylesheet" href="style.css?v=20261010b">
 </head>
 <body class="level-page level5-page">
     <div class="level-page-inner">
@@ -630,21 +630,20 @@
             phase = 'expanding';
             // e 复制一个 i：系数定格为当前位置的近似整数（ire^(iθ) 的 r）
             rValue = Math.round(Math.abs(eRealX) / unitPx);
-            eRLabel.textContent = 'i' + rValue;
+            // 只给系数里的 i 发光，常数 r 不发光：拆成 span
+            eRLabel.innerHTML = '<span class="coeff-i">i</span>' + rValue;
             eRLabel.classList.add('show');
+            // 系数的 i 一出现就立刻展开复数平面：虚轴按收起动画的逆过程重新长出
+            rebuildImaginaryTicks();
+            imaginaryAxisPos.classList.remove('collapsing');
+            imaginaryAxisNeg.classList.remove('collapsing');
             if (expandBanner) {
                 expandBanner.classList.add('show');
-                // 停留 3s 后淡出（0.4s 淡完），淡出结束后虚轴重新长出
+                // 停留 3s 后淡出（0.4s 淡完），与虚轴重新长出同时进行
                 setTimeout(() => expandBanner.classList.remove('show'), 3000);
             }
-            // 横幅显示 3s + 淡出 0.4s 完全消失后：保持黑色背景 + 白色数轴，虚轴按收起动画的逆过程重新长出
-            setTimeout(() => {
-                rebuildImaginaryTicks();
-                imaginaryAxisPos.classList.remove('collapsing');
-                imaginaryAxisNeg.classList.remove('collapsing');
-            }, 3400);
-            // 展开触发后 5s：e 快速移动到虚数轴上 i·r·e^(iθ) 对应的位置并消失
-            setTimeout(flyEToPlanePoint, 5000);
+            // 展开触发后 1.6s：e 快速移动到虚数轴上 i·r·e^(iθ) 对应的位置并消失（随展开提前相应前移）
+            setTimeout(flyEToPlanePoint, 1600);
         }
 
         // 虚轴刻度按当前单位重建（收起时单位从 3 倍变回 1 倍，旧刻度位置已失效）
@@ -693,19 +692,90 @@
                 if (t < 1) {
                     requestAnimationFrame(step);
                 } else {
-                    // 到达后消失，随即保存通关状态并跳转 level6
+                    // 到达后消失，随即画面缩小到 lv6 视角 + 坐标轴伸长到 ±100，再跳转 level6
                     setTimeout(() => {
                         eSprite.classList.remove('revealed');
-                        setTimeout(async () => {
-                            // 先等存档写完（localStorage + Supabase）再跳转，
-                            // 保证 games 页面的 Level 5 Passed 徽章立即生效
-                            await persistLevel5Passed();
-                            // 新版 level6 从原点出生，不再读取 sx 参数
-                            window.location.href = 'level6.html?v=46';
-                        }, 500);
+                        setTimeout(transitionToLevel6, 300);
                     }, 300);
                 }
             })(t0);
+        }
+
+        // ---- 结尾过渡：画面缩小到 lv6 视角 + 坐标轴伸长到 ±100，再存档跳转 lv6 ----
+        const LV6_UNIT_VW = 5.25;
+        function transitionToLevel6() {
+            const lv6Unit = window.innerWidth * LV6_UNIT_VW / 100; // lv6: 1 格 = 5.25vw
+            // 1) 坐标轴伸长：实轴宽 200 格；虚轴左右臂各 100 格；数轴高度也同步加高到 ±100
+            numberLine.classList.remove('to-level1');
+            numberLine.style.setProperty('--imaginary-unit', lv6Unit + 'px');
+            numberLine.style.width = (200 * lv6Unit) + 'px';
+            numberLine.style.minWidth = (200 * lv6Unit) + 'px';
+            numberLine.style.height = 'calc(var(--imaginary-unit) * 202 + 12vh)';
+            numberLine.style.minHeight = 'calc(var(--imaginary-unit) * 202 + 12vh)';
+            imaginaryAxisPos.style.height = 'calc(var(--imaginary-unit) * 100 + 5vh)';
+            imaginaryAxisNeg.style.height = 'calc(var(--imaginary-unit) * 100 + 5vh)';
+            // 2) 重建 ±100 刻度（实轴每 5 格一刻度、每 10 格一标签；虚轴每 5i 一格）
+            const nScale = document.getElementById('number-scale');
+            nScale.innerHTML = '';
+            for (let v = -100; v <= 100; v += 5) {
+                const pct = ((v + 100) / 200) * 100;
+                const tick = document.createElement('div');
+                tick.className = 'axis-tick';
+                tick.style.left = pct + '%';
+                tick.style.height = (v % 10 === 0 ? 3 : 1.8) + 'vh';
+                nScale.appendChild(tick);
+                if (v % 10 === 0) {
+                    const label = document.createElement('div');
+                    label.className = 'axis-label';
+                    label.style.left = pct + '%';
+                    label.textContent = v;
+                    nScale.appendChild(label);
+                }
+            }
+            imaginaryScale.innerHTML = '';
+            imaginaryScaleNeg.innerHTML = '';
+            for (let value = 5; value <= 100; value += 5) {
+                const t1 = document.createElement('div');
+                t1.className = 'imaginary-tick';
+                t1.style.bottom = (value * lv6Unit - 1) + 'px';
+                imaginaryScale.appendChild(t1);
+                const l1 = document.createElement('div');
+                l1.className = 'imaginary-label';
+                l1.style.bottom = (value * lv6Unit - 9) + 'px';
+                l1.textContent = value + 'i';
+                imaginaryScale.appendChild(l1);
+
+                const t2 = document.createElement('div');
+                t2.className = 'imaginary-tick';
+                t2.style.top = (value * lv6Unit - 1) + 'px';
+                imaginaryScaleNeg.appendChild(t2);
+                const l2 = document.createElement('div');
+                l2.className = 'imaginary-label';
+                l2.style.top = (value * lv6Unit - 9) + 'px';
+                l2.textContent = '-' + value + 'i';
+                imaginaryScaleNeg.appendChild(l2);
+            }
+            // 3) 缩小：整个 ±100 平面一页放得下（同 lv6 开场 s0）
+            const s0 = Math.min(
+                numberLineWrap.clientWidth / (200 * lv6Unit),
+                window.innerHeight / (200 * lv6Unit)
+            );
+            numberLine.style.transformOrigin = '50% 50%';
+            numberLine.style.transition = 'width 1.2s ease-in, min-width 1.2s ease-in, height 1.2s ease-in, transform 1.2s ease-in';
+            requestAnimationFrame(() => {
+                numberLine.style.transform = `scale(${s0})`;
+            });
+            centerOriginView();
+            setTimeout(() => {
+                centerOriginView();
+                persistAndJumpTo6();
+            }, 1300);
+        }
+
+        async function persistAndJumpTo6() {
+            // 先等存档写完（localStorage + Supabase）再跳转，保证 games 页面的 Level 5 Passed 徽章立即生效
+            await persistLevel5Passed();
+            window.location.href = 'level6.html?v=50';
         }
 
         // ---- Supabase 存档（与 level1-4 一致） ----

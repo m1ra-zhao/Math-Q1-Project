@@ -2896,6 +2896,21 @@ body.chinese .home-title {
     opacity: 1;
 }
 
+/* level5 单数轴（收起后）与 duplicate i（展开）状态下：e 图标、指数 i(π)、系数 i 整体上移 3vh */
+.level5-page.collapsed .e-sprite img {
+    transform: translateY(-3vh);
+}
+.level5-page.collapsed .e-sprite .e-exponent {
+    top: -2vh; /* 端点态原始 top:1vh，整体上移 3vh */
+}
+.level5-page.collapsed .e-sprite .e-r-label {
+    top: 2.2vh; /* 原始 top:5.2vh，整体上移 3vh */
+}
+/* 只给系数里的 i 发光（常数 r 保持普通样式） */
+.level5-page.collapsed .e-sprite .e-r-label .coeff-i {
+    text-shadow: 0 0 1vh #ffffff, 0 0 2.5vh #ffffa0, 0.3vh 0.3vh 0 #3f3f3f;
+}
+
 /* level5 展开横幅：在黑幕扩散上显示，需盖过遮罩并用白色文字；位置靠页面顶部 */
 #expand-banner {
     z-index: 220;
@@ -3264,6 +3279,15 @@ body.chinese .home-title {
     height: 6vh;
 }
 
+/* Free the End 成就：末影龙死亡时弹出（默认 .advancement-toast 右上角 + .show 滑入），transient 成就展示在其下方避免重叠 */
+.level6-page #advancement-freeend .advancement-toast-item-icon {
+    left: calc(3vh - 0.5vh); /* 龙首图标往左 */
+}
+.level6-page #advancement-takeaim,
+.level6-page #advancement-theend {
+    top: 16vh;
+}
+
 /* 失败文字：MC 死亡屏风格 */
 .fail-text {
     color: #ff5555;
@@ -3347,7 +3371,7 @@ body.chinese .home-title {
 }
 @keyframes endpoem-scroll {
     0%   { transform: translateY(100vh); }
-    100% { transform: translateY(calc(-100% - 100vh)); }
+    100% { transform: translateY(calc(-100% - 6vh)); } /* 末尾只留 6vh 余量，避免字幕滚完后还空滚一个屏幕高度 */
 }
 .end-poem-line {
     font-family: Minecraft, sans-serif;
@@ -3485,9 +3509,9 @@ body.chinese .home-title {
     color: #ffffff;
 }
 
-/* Advancement 弹窗标题行（Advancement Made!）由黄色改白 */
+/* Advancement 弹窗标题行（Advancement Made!）用黄色字体 */
 .level6-page .advancement-line-title {
-    color: #ffffff;
+    color: #FFFF55;
 }
 
 /* 弩箭/答题弹窗标题由黄色改白 */
