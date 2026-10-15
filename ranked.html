@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ranked PvP</title>
-    <link rel="stylesheet" href="style.css?v=20261013c">
+    <link rel="stylesheet" href="style.css?v=20261015a">
 </head>
 <body class="level-page ranked-page">
 
@@ -397,6 +397,13 @@
                 });
             }
 
+            // 首屏隐藏两个关卡世界，直到 startMatch/startSolo 显式打开对应阶段。
+            // 放在 async 初始化之后调用，确保 lv3/lv6 的 IIFE 已完成尺寸测量。
+            function hidePhases() {
+                if ($("phase-lv3")) $("phase-lv3").style.display = "none";
+                if ($("phase-lv6")) $("phase-lv6").style.display = "none";
+            }
+
             async function fetchRow() {
                 if (!roomCode || !supabaseClient) return null;
                 const { data, error } = await supabaseClient
@@ -440,6 +447,7 @@
             // —— 大厅 ——
             function renderNeedAuth() {
                 showView("view-lobby");
+                hidePhases();
                 $("lobby-auth").style.display = "block";
                 $("lobby-auth").textContent = "Please sign in to play Ranked. Return to the home page to log in.";
                 $("lobby-rating").style.display = "none";
@@ -450,6 +458,7 @@
 
             function renderLobby() {
                 showView("view-lobby");
+                hidePhases();
                 $("lobby-auth").style.display = "none";
                 $("lobby-rating").style.display = "block";
                 $("lobby-rating").innerHTML = "Elo: " + myRating + " (" + rankHtml(myRating) + ")";
