@@ -3536,3 +3536,269 @@ body.chinese .home-title {
     color: #ffffff;
     text-shadow: 4px 4px 0 #3f3f3f;
 }
+
+/* ================= PvP RANKED ================= */
+.ranked-view {
+    position: fixed;
+    inset: 0;
+    z-index: 700;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3vh;
+    background-image: url("pngs/background.jpg");
+    background-size: cover;
+    background-position: center;
+    padding: 4vh 6vw;
+    box-sizing: border-box;
+}
+.ranked-view.active {
+    display: flex;
+}
+.ranked-panel {
+    background: rgba(12, 12, 12, 0.88);
+    border: 3px solid #ffffff;
+    box-shadow: 1vh 1vh 0 rgba(0, 0, 0, 0.45);
+    padding: 4vh 5vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2vh;
+    max-width: 92vw;
+    box-sizing: border-box;
+}
+.ranked-title {
+    color: #ffff55;
+    font-family: Minecraft, sans-serif;
+    font-size: clamp(30px, 4.5vh, 48px);
+    text-shadow: 3px 3px 0 #555555;
+    line-height: 1.1;
+}
+.ranked-text {
+    color: #ffffff;
+    font-family: Minecraft, sans-serif;
+    font-size: clamp(16px, 2.6vh, 24px);
+    text-shadow: 2px 2px 0 #3f3f3f;
+    line-height: 1.4;
+    text-align: center;
+}
+.ranked-text.highlight {
+    color: #ffff55;
+}
+.ranked-input {
+    width: min(48vh, 72vw);
+    height: 6.5vh;
+    padding: 0 1.5vh;
+    box-sizing: border-box;
+    background: #ffffff;
+    border: 2px solid #a0a0a0;
+    outline: none;
+    font-family: Minecraft, sans-serif;
+    font-size: clamp(16px, 2.6vh, 26px);
+    color: #111111;
+    text-align: center;
+}
+.ranked-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5vh;
+    width: 100%;
+}
+.ranked-progress {
+    position: fixed;
+    top: 0.4vh;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 950;
+    background: rgba(0, 0, 0, 0.7);
+    border: 2px solid #ffffff;
+    padding: 0.6vh 2.4vh;
+    color: #ffffff;
+    font-family: Minecraft, sans-serif;
+    font-size: 2.2vh;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+/* 比赛两个阶段世界铺满视口：lv6 黑底、lv3 白底 */
+.phase-world {
+    min-height: 100vh;
+}
+#phase-lv6 {
+    background: #000000;
+}
+#phase-lv3 {
+    background: #ffffff;
+}
+
+/* —— lv6（黑底白字主题，等价 .level6-page） —— */
+#phase-lv6 .axis-line,
+#phase-lv6 .imaginary-axis-line { background: #ffffff; }
+#phase-lv6 .axis-line { height: 6px; }
+#phase-lv6 .imaginary-axis-line { width: 6px; }
+#phase-lv6 .axis-arrow.left { border-right-color: #ffffff; }
+#phase-lv6 .axis-arrow.right { border-left-color: #ffffff; }
+#phase-lv6 .axis-tick,
+#phase-lv6 .imaginary-tick { background: #ffffff; }
+#phase-lv6 .axis-label,
+#phase-lv6 .imaginary-label,
+#phase-lv6 .steve-coord-label {
+    color: #ffffff;
+    text-shadow: 0.3vh 0.3vh 0 #3f3f3f;
+}
+#phase-lv6 .axis-label,
+#phase-lv6 .imaginary-label { font-size: clamp(40px, 4.8vw, 68px); }
+#phase-lv6 .axis-label { top: calc(50% + 5.5vh); }
+#phase-lv6 .imaginary-axis .imaginary-label { transform: translateY(calc(-50% + 4.7vh)); }
+#phase-lv6 .imaginary-axis-neg .imaginary-label { transform: translateY(calc(50% + 1.1vh)); }
+#phase-lv6 .imaginary-axis::before,
+#phase-lv6 .imaginary-axis-neg::after {
+    border-bottom-color: #ffffff;
+    border-top-color: #ffffff;
+}
+#phase-lv6 .number-line {
+    flex: none;
+    min-height: 0;
+    height: calc(var(--imaginary-unit, 1vw) * 202 + 12vh);
+    transform-origin: 50% 50%;
+    transition: transform 2.5s cubic-bezier(0.45, 0.05, 0.35, 1);
+}
+#phase-lv6 .imaginary-axis { height: calc(var(--imaginary-unit) * 100 + 5vh); }
+#phase-lv6 .durability-bar { visibility: hidden; }
+#phase-lv6 .durability-bar.show { visibility: visible; }
+#phase-lv6 .no-treasure-banner { color: #ffffff; text-shadow: 0.3vh 0.3vh 0 #3f3f3f; }
+#phase-lv6 .wiki-back-link { color: #ffffff; }
+#phase-lv6 .system-toast-line { color: #ffffff; }
+#phase-lv6 .advancement-line-title { color: #FFFF55; }
+#phase-lv6 .quiz-modal .quiz-title { color: #ffffff; }
+#phase-lv6 .quiz-modal input { background: #111111; border-color: #a0a0a0; color: #ffffff; }
+#phase-lv6 .quiz-modal input.wrong { color: #ff5555; }
+#phase-lv6 .fail-text { color: #ffffff; text-shadow: 4px 4px 0 #3f3f3f; }
+#phase-lv6 #hints-toast { top: 18vh; }
+#phase-lv6 #hints-toast .system-toast-bg { height: 20vh; }
+#phase-lv6 #hints-toast .system-toast-line { white-space: normal; font-size: 2.4vh; }
+#phase-lv6 #hints-toast .system-toast-line.white-line { font-size: 2.2vh; }
+#phase-lv6 .advancement-toast-item-icon { height: 6vh; }
+#phase-lv6 #advancement-freeend .advancement-toast-item-icon { left: calc(3vh - 0.5vh); }
+#phase-lv6 #advancement-takeaim,
+#phase-lv6 #advancement-theend { top: 16vh; }
+
+/* —— lv3（白底，等价 .level3-page） —— */
+#phase-lv3 .number-line {
+    height: calc(var(--imaginary-unit, 10.5vw) * 40 + 12vh);
+    min-height: 2560px;
+}
+#phase-lv3 .imaginary-axis { height: calc(var(--imaginary-unit) * 20 + 5vh); }
+#phase-lv3 #lv3-tips-toast .system-toast-line { font-size: 3vh; }
+#phase-lv3 #lv3-tips-toast .system-toast-line.white-line { font-size: 2.6vh; }
+#phase-lv3 #lv3-tips-toast .system-toast-text { transform: translateY(0.5vh); }
+
+/* —— Ranked 段位徽章与积分榜 —— */
+.rank-badge {
+    text-shadow: 0 0 3px rgba(255, 255, 255, 0.7), 0 0 6px rgba(255, 255, 255, 0.35);
+}
+.lobby-panel {
+    width: min(96vw, 1200px);
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.lobby-top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1vh;
+}
+
+.lobby-columns {
+    display: flex;
+    gap: 3vw;
+    align-items: stretch;
+}
+
+.lobby-left {
+    flex: 1.15;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1vh;
+}
+
+.lobby-right {
+    flex: 0.85;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2vh;
+}
+
+#scoreboard {
+    width: 100%;
+}
+
+#scoreboard .ranked-title {
+    font-size: clamp(22px, 3.2vh, 34px);
+}
+
+#scoreboard-list {
+    width: 100%;
+    max-height: 55vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6vh;
+}
+
+.scoreboard-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5vh;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    padding: 0.8vh 1.5vh;
+    font-family: Minecraft, sans-serif;
+    color: #ffffff;
+    text-shadow: 1px 1px 0 #3f3f3f;
+    font-size: clamp(14px, 2vh, 20px);
+}
+.sb-rank {
+    width: 3.5em;
+    color: #ffff55;
+    text-align: left;
+}
+.sb-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+}
+.sb-rating {
+    color: #ffffff;
+    text-align: right;
+}
+
+/* —— 大厅右侧按钮：与首页 OPTIONS/QUIT 同款 —— */
+.lobby-right button {
+    width: 37.5vh;
+    max-width: 310px;
+    height: 7.5vh;
+    max-height: 60px;
+    margin: 0;
+    background: none;
+    border: 3px solid transparent;
+    border-image: url("pngs/button.png") 1 fill stretch;
+    image-rendering: pixelated;
+}
+.lobby-right button:hover {
+    border-image-source: url("pngs/button_highlighted.png");
+}
+#join-code-input {
+    width: 100%;
+}
