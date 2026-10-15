@@ -1,0 +1,2860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ranked PvP</title>
+    <link rel="stylesheet" href="style.css?v=20261013c">
+</head>
+<body class="level-page ranked-page">
+
+    <!-- ================= 大厅 ================= -->
+    <div id="view-lobby" class="ranked-view active">
+        <div class="ranked-panel lobby-panel">
+            <div class="lobby-top">
+                <div class="ranked-title">Complex Number Speed Running</div>
+                <div id="lobby-auth" class="ranked-text" style="display:none;"></div>
+                <div id="lobby-rating" class="ranked-text highlight"></div>
+            </div>
+            <div class="lobby-columns">
+                <div class="lobby-left">
+                    <div id="scoreboard" style="display:none;">
+                        <div class="ranked-title">SCOREBOARD</div>
+                        <div id="scoreboard-list"></div>
+                    </div>
+                </div>
+                <div class="lobby-right">
+                    <div id="lobby-actions" class="ranked-row" style="display:none;">
+                        <button id="create-room-btn" type="button"><span>CREATE ROOM</span></button>
+                        <input id="join-code-input" class="ranked-input" type="text" maxlength="6" autocomplete="off" spellcheck="false" placeholder="ROOM CODE" style="display:none;">
+                        <button id="join-room-btn" type="button"><span>JOIN ROOM</span></button>
+                        <button id="solo-btn" type="button"><span>PLAY SOLO</span></button>
+                    </div>
+                    <button id="lobby-back" type="button"><span>BACK</span></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 等待房 ================= -->
+    <div id="view-waiting" class="ranked-view">
+        <div class="ranked-panel">
+            <div class="ranked-title">WAITING ROOM</div>
+            <div id="waiting-code" class="ranked-text highlight"></div>
+            <div id="waiting-players" class="ranked-text"></div>
+            <button id="ready-btn" type="button"><span>READY</span></button>
+            <button id="leave-btn" type="button"><span>LEAVE</span></button>
+        </div>
+    </div>
+
+    <!-- ================= 结算 ================= -->
+    <div id="view-result" class="ranked-view">
+        <div class="ranked-panel">
+            <div id="result-title" class="ranked-title">VICTORY!</div>
+            <div id="result-body"></div>
+            <button id="result-back-btn" type="button"><span>BACK</span></button>
+        </div>
+    </div>
+
+    <!-- ================= 比赛（lv6 + lv3，始终在文档流中供取尺寸） ================= -->
+    <div id="view-match">
+        <div id="ranked-progress" class="ranked-progress">You: LV3 | Opponent: LV3</div>
+
+        <!-- ============ 阶段二：打龙（level6 DOM 原样照抄） ============ -->
+        <div id="phase-lv6" class="phase-world">
+    <div class="level-page-inner">
+        <a class="wiki-back-link" href="index.html">← Back to Home</a>
+        <div id="steve-coord" class="steve-coord-label">
+            <div id="coord-z"></div>
+        </div>
+
+        <!-- 末影龙血条：pink_progress 叠在 pink_background 上（耐久条同款宽度逻辑） -->
+        <div id="boss-bar">
+            <div class="boss-name">Ender Dragon</div>
+            <div class="boss-bar-frame">
+                <img src="pngs/pink_background.png" class="boss-bg" alt="">
+                <img src="pngs/pink_progress.png" id="boss-progress" alt="">
+            </div>
+        </div>
+
+        <div class="number-line-wrap" aria-label="Complex plane">
+            <div class="number-line" id="world">
+                <div class="axis-arrow left"></div>
+                <div class="axis-arrow right"></div>
+                <div class="axis-line"></div>
+                <div class="imaginary-axis imaginary-axis-visible" id="imaginary-axis-pos" aria-label="Positive imaginary axis">
+                    <div class="imaginary-axis-line"></div>
+                    <div id="imaginary-scale" class="imaginary-scale"></div>
+                </div>
+                <div class="imaginary-axis imaginary-axis-neg imaginary-axis-visible" id="imaginary-axis-neg" aria-label="Negative imaginary axis">
+                    <div class="imaginary-axis-line"></div>
+                    <div id="imaginary-scale-neg" class="imaginary-scale"></div>
+                </div>
+                <div id="number-scale" class="number-scale"></div>
+                <!-- 玩家活动边界：半径 55 格的圆圈 -->
+                <div id="play-circle" aria-label="Play boundary"></div>
+                <!-- End Spike × 8（180° 为 with cage），水晶由 JS 生成 -->
+                <div id="dragon-label"><span id="dragon-r"></span><span class="dragon-e">e</span><span id="dragon-exp"></span></div>
+                <div id="dragon-sprite"><img src="pngs/Ender_Dragon.gif" id="dragon-img" alt="Ender Dragon"></div>
+                <!-- endportal：末影龙血量归零后在原点激活 -->
+                <img id="endportal" class="endportal-sprite" src="pngs/endportal.png" alt="End Portal">
+                <img id="steve" class="steve-sprite" src="pngs/Steve_JE5.png.webp" alt="Steve">
+                <img id="steve-run" class="steve-sprite steve-run-img" src="pngs/Sprinting_Steve.png" alt="">
+            </div>
+        </div>
+    </div>
+
+    <!-- 开场/提示横幅：No treasure found 同款动画 -->
+    <div id="level-banner" class="no-treasure-banner">Welcome to LEVEL 6!</div>
+
+    <!-- Hints 弹窗：首次击中末影龙（而非水晶）时右上角弹出 -->
+    <div id="hints-toast" class="system-toast">
+        <img src="pngs/system.png" alt="" class="system-toast-bg">
+        <div class="system-toast-text">
+            <div class="system-toast-line">Hints!</div>
+            <div class="system-toast-line white-line">Aim at the crystals before aiming at the Ender Dragon!</div>
+        </div>
+    </div>
+
+    <!-- 进度弹窗：Take Aim（首次击中龙或水晶）/ The End.（龙血归零） -->
+    <div id="advancement-takeaim" class="advancement-toast with-icon">
+        <img src="pngs/advancement.png" alt="" class="advancement-toast-bg">
+        <img src="pngs/Arrow.png" alt="" class="advancement-toast-item-icon">
+        <div class="advancement-toast-text">
+            <div class="advancement-line-title">Advancement Made!</div>
+            <div class="advancement-line-body">Take Aim</div>
+        </div>
+    </div>
+    <div id="advancement-theend" class="advancement-toast with-icon">
+        <img src="pngs/advancement.png" alt="" class="advancement-toast-bg">
+        <img src="pngs/End_Stone_JE3_BE2.png" alt="" class="advancement-toast-item-icon">
+        <div class="advancement-toast-text">
+            <div class="advancement-line-title">Advancement Made!</div>
+            <div class="advancement-line-body">The End.</div>
+        </div>
+    </div>
+
+    <!-- 右上角成就：Free the End（龙首图标，末影龙死亡时弹出，3s 后弹回） -->
+    <div id="advancement-freeend" class="advancement-toast with-icon">
+        <img src="pngs/advancement.png" alt="" class="advancement-toast-bg">
+        <img src="pngs/Dragon_Head.png" alt="" class="advancement-toast-item-icon">
+        <div class="advancement-toast-text">
+            <div class="advancement-line-title">Advancement Made!</div>
+            <div class="advancement-line-body">Free the End.</div>
+        </div>
+    </div>
+
+    <!-- 物品栏：槽位 1 弩箭（带耐久条），槽位 2 地图 -->
+    <div id="hotbar" class="hotbar show clickable" aria-label="Hotbar"></div>
+
+    <!-- 地图：选中槽位 2 时展示 -->
+    <div id="map-overlay">
+        <img src="pngs/Map_Empty.png" class="map-base" alt="">
+        <div id="map-icons"></div>
+    </div>
+
+    <!-- 瞄准弹窗：弩箭询问攻击坐标（弧度制 / 角度制） -->
+    <div id="aim-modal" class="quiz-modal">
+        <div class="quiz-title">Crossbow</div>
+        <div class="quiz-sub">Type the target coordinate:<br>rcis(a/b pi) for radians, or rcis(theta deg) for degrees</div>
+        <input id="aim-input" type="text" autocomplete="off" spellcheck="false">
+        <div class="small-buttons">
+            <button id="aim-confirm" type="button"><span>Confirm</span></button>
+        </div>
+    </div>
+
+    <!-- Crossbow 教程弹窗：玩家首次选中弩时右上角弹出 -->
+    <div id="crossbow-tutorial" class="tutorial-toast">
+        <img src="pngs/tutorial.png" alt="" class="tutorial-toast-bg">
+        <img src="pngs/mouse.png" alt="" class="tutorial-toast-icon">
+        <div class="tutorial-toast-text">
+            <div class="tutorial-line-title">Crossbow</div>
+            <div class="tutorial-line-body">Click screen to use.</div>
+        </div>
+    </div>
+
+    <!-- 答题弹窗：击中 -64 水晶后输入 z^4=64cis pi 的四个根 -->
+    <div id="quiz-modal" class="quiz-modal">
+        <div class="quiz-title">z^4=64cis pi, z=? </div>
+        <div class="quiz-sub">Type your answer in the form of rcis(a/b pi),<br>one root at a time, 3 sig.fig. for r.</div>
+        <input id="quiz-input" type="text" autocomplete="off" spellcheck="false">
+        <div class="small-buttons">
+            <button id="quiz-confirm" type="button"><span>Confirm</span></button>
+        </div>
+    </div>
+
+    <!-- 失败画面：60 支箭用完仍未击败末影龙 -->
+    <div id="fail-overlay" class="win-overlay">
+        <div class="win-text fail-text">TRY AGAIN!</div>
+        <button id="fail-back-btn" type="button"><span>BACK</span></button>
+    </div>
+
+    <!-- 终末之诗：通关后滚动字幕，末尾淡出进入 Congratulation -->
+    <div id="end-poem">
+        <div class="end-poem-scroll" id="end-poem-scroll"></div>
+    </div>
+
+    <!-- 通关画面：Congratulation 下方持续飞出复数公式 -->
+    <div id="win-overlay" class="win-overlay">
+        <div id="formula-layer"></div>
+        <div class="win-text">CONGRATULATIONS!</div>
+        <button id="win-back-btn" type="button"><span>BACK</span></button>
+    </div>
+        </div>
+
+        <!-- ============ 阶段一：寻宝（level3 DOM，id 加 lv3- 前缀） ============ -->
+        <div id="phase-lv3" class="phase-world">
+    <div class="level-page-inner">
+        <a class="wiki-back-link" href="index.html">← Back to Home</a>
+        <div id="lv3-steve-coord" class="steve-coord-label">
+            <div id="lv3-coord-z"></div>
+        </div>
+
+        <div class="number-line-wrap" aria-label="Number line">
+            <div class="number-line">
+                <div class="axis-arrow left"></div>
+                <div class="axis-arrow right"></div>
+                <div class="axis-line"></div>
+                <div class="imaginary-axis imaginary-axis-visible" id="lv3-imaginary-axis-pos" aria-label="Positive imaginary axis">
+                    <div class="imaginary-axis-line"></div>
+                    <div id="lv3-imaginary-scale" class="imaginary-scale"></div>
+                </div>
+                <div class="imaginary-axis imaginary-axis-neg imaginary-axis-visible" id="lv3-imaginary-axis-neg" aria-label="Negative imaginary axis">
+                    <div class="imaginary-axis-line"></div>
+                    <div id="lv3-imaginary-scale-neg" class="imaginary-scale"></div>
+                </div>
+                <div id="lv3-number-scale" class="number-scale"></div>
+                <!-- 三个宝藏：初始隐藏，挖到对应位置才显示 -->
+                <img id="lv3-treasure-flint" class="treasure-sprite" src="pngs/flint.png" alt="Flint">
+                <img id="lv3-treasure-iron" class="treasure-sprite" src="pngs/iron_ingot.png" alt="Iron Ingot">
+                <img id="lv3-treasure-obsidian" class="treasure-sprite" src="pngs/Obsidian_JE3_BE2.png" alt="Obsidian">
+                <!-- 破损的 portal（6 - 8i）与激活后的 portal -->
+                <img id="lv3-ruined-portal" class="ruined-portal-sprite" src="pngs/Overworld_Ruined_Portal_1.png" alt="Ruined Portal">
+                <img id="lv3-nether-portal" class="nether-portal-sprite" src="pngs/Nether_portal.png" alt="Nether Portal">
+                <img id="lv3-steve" class="steve-sprite" src="pngs/Steve_JE5.png.webp" alt="Steve">
+                <img id="lv3-steve-run" class="steve-sprite steve-run-img" src="pngs/Sprinting_Steve.png" alt="">
+            </div>
+        </div>
+    </div>
+
+    <div id="lv3-hotbar" class="hotbar" aria-label="Hotbar"></div>
+
+    <!-- 罗盘悬浮窗：选中槽位 1 时显示宝藏相对位置 -->
+    <div id="lv3-compass-tooltip" class="compass-tooltip"></div>
+
+    <!-- 开场提示：收集 3 种材料 -->
+    <div id="lv3-tips-toast" class="system-toast">
+        <img src="pngs/system.png" alt="" class="system-toast-bg">
+        <div class="system-toast-text">
+            <div class="system-toast-line">Tips!</div>
+            <div class="system-toast-line white-line">Collect 3 materials<br>to activate portal!</div>
+        </div>
+    </div>
+
+    <!-- 挖空提示：NO TREASURE FOUND -->
+    <div id="lv3-no-treasure-banner" class="no-treasure-banner">NO TREASURE FOUND</div>
+
+    <!-- 拾取黑曜石时的成就弹窗（左部带图标） -->
+    <div id="lv3-advancement-toast" class="advancement-toast with-icon">
+        <img src="pngs/advancement.png" alt="" class="advancement-toast-bg">
+        <img src="pngs/Obsidian_JE3_BE2.png" alt="Obsidian" class="advancement-toast-item-icon">
+        <div class="advancement-toast-text">
+            <div class="advancement-line-title">Advancement Made!</div>
+            <div class="advancement-line-body">Ice Bucket Challenge</div>
+        </div>
+    </div>
+
+    <!-- 通关画面 -->
+    <div id="lv3-win-overlay" class="win-overlay">
+        <div class="win-text">CONGRATULATIONS!</div>
+        <button id="lv3-win-back-btn" type="button"><span>BACK</span></button>
+    </div>
+
+    <!-- 失败画面 -->
+    <div id="lv3-fail-overlay" class="win-overlay">
+        <div class="win-text">You Failed!</div>
+        <button id="lv3-fail-retry-btn" type="button"><span>Try Again</span></button>
+    </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        // ==================== Ranked PvP 编排（大厅/等待/比赛流程/Elo 结算） ====================
+        (function () {
+            const SUPABASE_URL = "https://mrhcdtaqeintpeoeknlq.supabase.co";
+            const SUPABASE_ANON_KEY = "sb_publishable_8sB8D4RFrbLVYffhSkqqVQ_XrJdrG0E";
+            const supabaseClient = window.supabase
+                ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+                : null;
+
+            const RANK_TIERS = [
+                { tier: "Coal", min: 0, color: "#000000" },
+                { tier: "Copper", min: 350, color: "#b87333" },
+                { tier: "Iron", min: 475, color: "#c0c0c0" },
+                { tier: "Gold", min: 600, color: "#ffd700" },
+                { tier: "Emerald", min: 725, color: "#2ecc71" },
+                { tier: "Diamond", min: 850, color: "#4fc3f7" },
+                { tier: "Netherite", min: 1000, color: "#a855f7" }
+            ];
+            function ratingToRank(rating) {
+                let cur = RANK_TIERS[0];
+                for (const t of RANK_TIERS) if (rating >= t.min) cur = t;
+                return cur;
+            }
+            function rankName(rating) { return ratingToRank(rating).tier; }
+            function rankColor(rating) { return ratingToRank(rating).color; }
+            function rankHtml(rating) {
+                return '<span class="rank-badge" style="color:' + rankColor(rating) + '">' + rankName(rating) + '</span>';
+            }
+            function expected(my, opp) {
+                return 1 / (1 + Math.pow(10, (opp - my) / 400));
+            }
+            function newRating(my, opp, score) {
+                return Math.round(my + 32 * (score - expected(my, opp)));
+            }
+
+            // 单人模式通关分数：T 秒通关，分数夹在 [20, 40]
+            function computeSoloScore(T) {
+                const T_fast = 120, tau = 60;
+                if (T <= T_fast) return 40;
+                const raw = 20 + 20 * Math.exp(-(T - T_fast) / tau);
+                return Math.round(Math.min(40, Math.max(20, raw)));
+            }
+            function fmtTime(sec) {
+                const s = Math.round(sec);
+                const m = Math.floor(s / 60);
+                const r = s % 60;
+                return m > 0 ? m + "m " + r + "s" : r + "s";
+            }
+
+            // 确定性伪随机：mulberry32，由房间码 seed 生成宝藏坐标
+            function mulberry32(a) {
+                return function () {
+                    a |= 0; a = (a + 0x6D2B79F5) | 0;
+                    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+                    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+                };
+            }
+            function genTreasureCoords(seed) {
+                const rng = mulberry32(Number(seed) & 0xFFFFFFFF);
+                const used = {};
+                const vals = [-3, -2, -1, 1, 2, 3];
+                function nextPoint() {
+                    while (true) {
+                        const x = Math.floor(rng() * 37) - 18;
+                        const y = Math.floor(rng() * 37) - 18;
+                        if (x === 0 && y === 0) continue;
+                        if (x === 6 && y === -8) continue;
+                        const k = x + "," + y;
+                        if (used[k]) continue;
+                        used[k] = true;
+                        return { x: x, y: y };
+                    }
+                }
+                const coords = [nextPoint(), nextPoint()];
+                // 第三个宝藏：复数乘法 (a+bi)(c+di)，玩家算乘积找坐标
+                while (true) {
+                    const a = vals[Math.floor(rng() * vals.length)];
+                    const b = vals[Math.floor(rng() * vals.length)];
+                    const c = vals[Math.floor(rng() * vals.length)];
+                    const d = vals[Math.floor(rng() * vals.length)];
+                    const x = a * c - b * d;   // 实部 ac - bd
+                    const y = a * d + b * c;   // 虚部 ad + bc
+                    if (x === 0 && y === 0) continue;
+                    if (x === 6 && y === -8) continue;
+                    if (x < -18 || x > 18 || y < -18 || y > 18) continue;
+                    const k = x + "," + y;
+                    if (used[k]) continue;
+                    used[k] = true;
+                    coords.push({ x: x, y: y, factors: { a: a, b: b, c: c, d: d } });
+                    break;
+                }
+                return coords;
+            }
+            window.genTreasureCoords = genTreasureCoords;
+
+            let currentUserId = null;
+            let currentDisplayName = "Player";
+            let myRating = 100;
+            let roomCode = null;
+            let mySide = null;              // 'host' | 'guest'
+            let myPhase = "lv3";
+            let matchRow = null;
+            let pollTimer = null;
+            let matchStartTime = null;
+            let myClearTime = null;
+            let soloMode = false;
+            window.__activePhase = null;
+
+            function $(id) { return document.getElementById(id); }
+
+            function showView(name) {
+                ["view-lobby", "view-waiting", "view-result"].forEach(function (v) {
+                    $(v).classList.toggle("active", v === name);
+                });
+            }
+
+            async function fetchRow() {
+                if (!roomCode || !supabaseClient) return null;
+                const { data, error } = await supabaseClient
+                    .from("ranked_matches")
+                    .select("*")
+                    .eq("id", roomCode)
+                    .maybeSingle();
+                if (error) return null;
+                return data;
+            }
+
+            async function ensureProfile() {
+                if (!supabaseClient || !currentUserId) return null;
+                const { data } = await supabaseClient
+                    .from("ranked_profiles")
+                    .select("*")
+                    .eq("id", currentUserId)
+                    .maybeSingle();
+                if (data) {
+                    myRating = data.rating != null ? data.rating : 100;
+                    return data;
+                }
+                await supabaseClient
+                    .from("ranked_profiles")
+                    .upsert({ id: currentUserId, display_name: currentDisplayName, rating: 100, wins: 0, losses: 0, games: 0 });
+                myRating = 100;
+                return null;
+            }
+
+            async function resolveDisplayName(uid) {
+                if (!uid || !supabaseClient) return null;
+                const { data: rp } = await supabaseClient
+                    .from("ranked_profiles").select("display_name").eq("id", uid).maybeSingle();
+                if (rp && rp.display_name) return rp.display_name;
+                const { data: p } = await supabaseClient
+                    .from("profiles").select("username").eq("id", uid).maybeSingle();
+                if (p && p.username) return p.username;
+                return null;
+            }
+
+            // —— 大厅 ——
+            function renderNeedAuth() {
+                showView("view-lobby");
+                $("lobby-auth").style.display = "block";
+                $("lobby-auth").textContent = "Please sign in to play Ranked. Return to the home page to log in.";
+                $("lobby-rating").style.display = "none";
+                $("lobby-actions").style.display = "none";
+                $("scoreboard").style.display = "none";
+                $("lobby-back").onclick = function () { window.location.href = "index.html"; };
+            }
+
+            function renderLobby() {
+                showView("view-lobby");
+                $("lobby-auth").style.display = "none";
+                $("lobby-rating").style.display = "block";
+                $("lobby-rating").innerHTML = "Elo: " + myRating + " (" + rankHtml(myRating) + ")";
+                $("lobby-actions").style.display = "flex";
+                $("scoreboard").style.display = "block";
+                renderScoreboard();
+                $("lobby-back").onclick = function () { window.location.href = "index.html"; };
+            }
+
+            function escapeHtml(s) {
+                return String(s).replace(/[&<>"']/g, function (c) {
+                    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+                });
+            }
+
+            async function renderScoreboard() {
+                const el = $("scoreboard-list");
+                if (!el || !supabaseClient) return;
+                el.innerHTML = '<div class="ranked-text">Loading…</div>';
+                const { data, error } = await supabaseClient
+                    .from("ranked_profiles")
+                    .select("id, display_name, rating")
+                    .order("rating", { ascending: false })
+                    .limit(100);
+                if (error) { el.innerHTML = ""; return; }
+                el.innerHTML = "";
+                if (!data || data.length === 0) {
+                    el.innerHTML = '<div class="ranked-text">No players yet.</div>';
+                    return;
+                }
+                data.forEach(function (p, i) {
+                    const row = document.createElement("div");
+                    row.className = "scoreboard-row";
+                    const name = p.display_name || ("#" + (p.id || "").slice(0, 6));
+                    row.innerHTML =
+                        '<span class="sb-rank">' + (i + 1) + '</span>' +
+                        '<span class="sb-name">' + escapeHtml(name) + '</span>' +
+                        '<span class="sb-rating">' + (p.rating != null ? p.rating : 100) + '</span>';
+                    el.appendChild(row);
+                });
+            }
+
+            async function initPage() {
+                $("lobby-auth").style.display = "block";
+                $("lobby-auth").textContent = "Loading...";
+                $("lobby-actions").style.display = "none";
+                if (!supabaseClient) { renderNeedAuth(); return; }
+                const { data, error } = await supabaseClient.auth.getSession();
+                if (error || !data || !data.session || !data.session.user) { renderNeedAuth(); return; }
+                currentUserId = data.session.user.id;
+                currentDisplayName =
+                    (data.session.user.user_metadata && data.session.user.user_metadata.user_id) ||
+                    (data.session.user.email ? data.session.user.email.split("@")[0] : "Player");
+                await ensureProfile();
+                renderLobby();
+            }
+
+            function randomCode() {
+                const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+                let s = "";
+                for (let i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * chars.length)];
+                return s;
+            }
+
+            async function createRoom() {
+                if (!supabaseClient || !currentUserId) { renderNeedAuth(); return; }
+                await ensureProfile();
+                const code = randomCode();
+                const seed = Math.floor(Math.random() * 9007199254740991);
+                const { error } = await supabaseClient.from("ranked_matches").insert({
+                    id: code,
+                    host_id: currentUserId,
+                    host_rating: myRating,
+                    seed: seed,
+                    status: "waiting",
+                    host_ready: false,
+                    guest_ready: false,
+                    host_progress: {},
+                    guest_progress: {}
+                });
+                if (error) { alert("Failed to create room: " + error.message); return; }
+                roomCode = code;
+                mySide = "host";
+                enterWaiting();
+            }
+
+            async function joinRoom() {
+                if (!supabaseClient || !currentUserId) { renderNeedAuth(); return; }
+                await ensureProfile();
+                const raw = $("join-code-input").value.trim().toUpperCase();
+                if (!/^[A-Z0-9]{6}$/.test(raw)) { alert("Enter a 6-character room code."); return; }
+                const { data: joined, error } = await supabaseClient.rpc("join_room", { p_code: raw, p_rating: myRating });
+                if (error) { console.error("joinRoom error:", error); alert("Failed to join: " + error.message); return; }
+                if (!joined) { console.log("joinRoom: room not found or already full, code=" + raw); alert("Room not found or already full."); return; }
+                console.log("joinRoom ok, code=" + raw);
+                roomCode = raw;
+                mySide = "guest";
+                enterWaiting();
+            }
+
+            // —— 等待房 ——
+            function enterWaiting() {
+                showView("view-waiting");
+                $("waiting-code").textContent = "Room code: " + roomCode;
+                updateReadyButton();
+                startPoll(pollWaiting);
+            }
+
+            function updateReadyButton() {
+                if (!matchRow) { $("ready-btn").innerHTML = "<span>READY</span>"; return; }
+                const mine = mySide === "host" ? !!matchRow.host_ready : !!matchRow.guest_ready;
+                $("ready-btn").innerHTML = mine ? "<span>READY ✓</span>" : "<span>READY</span>";
+            }
+
+            async function renderWaiting() {
+                const hostName = (mySide === "host" ? currentDisplayName : (await resolveDisplayName(matchRow.host_id))) || "Host";
+                const guestText = matchRow.guest_id
+                    ? ((mySide === "guest" ? currentDisplayName : (await resolveDisplayName(matchRow.guest_id))) || "Guest")
+                    : "Waiting for opponent...";
+                $("waiting-players").textContent = "Host: " + hostName + "   |   Guest: " + guestText;
+                updateReadyButton();
+            }
+
+            async function pollWaiting() {
+                const row = await fetchRow();
+                if (!row) {
+                    if (mySide === "host") alert("Room disappeared.");
+                    leaveWaiting();
+                    return;
+                }
+                matchRow = row;
+                if (row.status === "playing") { startMatch(); return; }
+                if (row.status === "finished") { startMatch(); return; }
+                renderWaiting();
+                if (row.status === "waiting" && row.host_ready && row.guest_ready && row.host_id && row.guest_id) {
+                    await supabaseClient.from("ranked_matches")
+                        .update({ status: "playing", started_at: new Date().toISOString() })
+                        .eq("id", roomCode);
+                }
+            }
+
+            async function toggleReady() {
+                if (!supabaseClient || !roomCode) return;
+                const col = mySide === "host" ? "host_ready" : "guest_ready";
+                const cur = matchRow ? !!matchRow[col] : false;
+                await supabaseClient.from("ranked_matches").update({ [col]: !cur }).eq("id", roomCode);
+            }
+
+            function leaveWaiting() {
+                if (supabaseClient && roomCode && mySide === "host" && matchRow && matchRow.status === "waiting") {
+                    supabaseClient.from("ranked_matches").delete().eq("id", roomCode);
+                }
+                stopPoll();
+                roomCode = null; mySide = null; matchRow = null;
+                renderLobby();
+            }
+
+            // —— 比赛 ——
+            function startMatch() {
+                stopPoll();
+                soloMode = false;
+                matchStartTime = performance.now();
+                myClearTime = null;
+                $("ranked-progress").style.display = "";
+                const seed = matchRow ? Number(matchRow.seed) : 0;
+                myPhase = "lv3";
+                window.__activePhase = "lv3";
+                $("phase-lv3").style.display = "block";
+                $("phase-lv6").style.display = "none";
+                if (window.__rankedInitLv3) window.__rankedInitLv3(seed);
+                if (window.__rankedCenterLv3) window.__rankedCenterLv3();
+                if (window.__rankedLv3Tips) window.__rankedLv3Tips();
+                updateProgressBar();
+                showView("view-match");
+                startPoll(pollMatch);
+            }
+
+            function progressTopic(p) {
+                if (p && p.phase === "done") return "DONE";
+                if (p && p.phase === "lost") return "LEFT";
+                if (p && p.phase === "lv6") return "LV6";
+                return "LV3";
+            }
+
+            function updateProgressBar() {
+                const row = matchRow || {};
+                const myProgress = mySide === "host" ? row.host_progress : row.guest_progress;
+                const oppProgress = mySide === "host" ? row.guest_progress : row.host_progress;
+                $("ranked-progress").textContent =
+                    "You: " + progressTopic(myProgress) + "   |   Opponent: " + progressTopic(oppProgress);
+            }
+
+            async function pollMatch() {
+                const row = await fetchRow();
+                if (!row) return;
+                matchRow = row;
+                updateProgressBar();
+                const opp = mySide === "host" ? (row.guest_progress || {}) : (row.host_progress || {});
+                if (opp.phase === "lost" && !row.winner_id && !row.finished_at) {
+                    await finalizeMatch(currentUserId);
+                    await showResult();
+                    return;
+                }
+                if (row.winner_id && !row.finished_at) {
+                    await finalizeMatch(row.winner_id);
+                    await showResult();
+                    return;
+                }
+                if (row.finished_at) {
+                    await showResult();
+                    return;
+                }
+            }
+
+            async function updateMyProgress(progress) {
+                if (!supabaseClient || !roomCode) return;
+                const col = mySide === "host" ? "host_progress" : "guest_progress";
+                await supabaseClient.from("ranked_matches").update({ [col]: progress }).eq("id", roomCode);
+            }
+
+            // —— 结算挂钩（由 lv3/lv6 在完成/失败时调用） ——
+            window.onLv3Done = function () {
+                if (myPhase !== "lv3") return;
+                myPhase = "lv6";
+                if (!soloMode) updateMyProgress({ phase: "lv6" });
+                window.__activePhase = "lv6";
+                $("phase-lv3").style.display = "none";
+                $("phase-lv6").style.display = "block";
+                if (window.__rankedStartLv6) window.__rankedStartLv6();
+                updateProgressBar();
+            };
+
+            window.onLv6Done = async function () {
+                if (myPhase !== "lv6") return;
+                myPhase = "done";
+                window.__activePhase = null;
+                const clearSec = (performance.now() - (matchStartTime || performance.now())) / 1000;
+                if (soloMode) { await finishSolo(clearSec); return; }
+                myClearTime = clearSec;
+                stopPoll();
+                showResultPlaceholder();
+                await updateMyProgress({ phase: "done" });
+                const row = await fetchRow();
+                let winner = row && row.winner_id;
+                if (!winner) {
+                    winner = currentUserId;
+                    await supabaseClient.from("ranked_matches").update({ winner_id: winner }).eq("id", roomCode);
+                }
+                await finalizeMatch(winner);
+                await showResult();
+            };
+
+            window.onRankedLost = async function (phase) {
+                if (soloMode) { showSoloFail(); return; }
+                if (!roomCode || !currentUserId) return;
+                if (myPhase === "done" || myPhase === "lost") return;
+                myPhase = "lost";
+                window.__activePhase = null;
+                stopPoll();
+                showResultPlaceholder();
+                await updateMyProgress({ phase: "lost" });
+                const row = await fetchRow();
+                const winner = row
+                    ? (currentUserId === row.guest_id ? row.host_id : row.guest_id)
+                    : null;
+                if (winner) {
+                    await finalizeMatch(winner);
+                } else {
+                    await supabaseClient.from("ranked_matches")
+                        .update({ status: "finished", finished_at: new Date().toISOString() })
+                        .eq("id", roomCode);
+                }
+                await showResult();
+            };
+
+            // —— 单人模式：自己玩算通关时间，分数按公式计入 Elo ——
+            function startSolo() {
+                stopPoll();
+                soloMode = true;
+                roomCode = null; mySide = null; matchRow = null;
+                myClearTime = null;
+                matchStartTime = performance.now();
+                myPhase = "lv3";
+                window.__activePhase = "lv3";
+                $("ranked-progress").style.display = "none";
+                $("phase-lv3").style.display = "block";
+                $("phase-lv6").style.display = "none";
+                const seed = Math.floor(Math.random() * 9007199254740991);
+                if (window.__rankedInitLv3) window.__rankedInitLv3(seed);
+                if (window.__rankedCenterLv3) window.__rankedCenterLv3();
+                if (window.__rankedLv3Tips) window.__rankedLv3Tips();
+                showView("view-match");
+            }
+
+            async function finishSolo(clearSec) {
+                const score = computeSoloScore(clearSec);
+                let oldRating = myRating;
+                if (supabaseClient && currentUserId) {
+                    const { data } = await supabaseClient.from("ranked_profiles").select("rating, games").eq("id", currentUserId).maybeSingle();
+                    if (data) {
+                        oldRating = data.rating != null ? data.rating : myRating;
+                        const games = (data.games || 0) + 1;
+                        const newRating = oldRating + score;
+                        await supabaseClient.from("ranked_profiles").upsert({
+                            id: currentUserId,
+                            rating: newRating,
+                            games: games,
+                            updated_at: new Date().toISOString()
+                        });
+                        myRating = newRating;
+                    }
+                }
+                $("result-title").textContent = "CLEARED!";
+                $("result-title").style.color = "#ffff55";
+                $("result-body").innerHTML = "";
+                [
+                    "Clear Time: " + fmtTime(clearSec),
+                    "Score: +" + score,
+                    "Elo: " + oldRating + " → " + myRating
+                ].forEach(function (t) {
+                    const d = document.createElement("div");
+                    d.className = "ranked-text";
+                    d.textContent = t;
+                    $("result-body").appendChild(d);
+                });
+                showView("view-result");
+            }
+
+            function showSoloFail() {
+                myPhase = "done";
+                $("ranked-progress").style.display = "";
+                $("result-title").textContent = "DEFEAT!";
+                $("result-title").style.color = "#ff5555";
+                $("result-body").innerHTML = "";
+                showView("view-result");
+            }
+
+            function showResultPlaceholder() {
+                showView("view-result");
+                $("result-title").textContent = "SETTLING...";
+                $("result-title").style.color = "#ffff55";
+                $("result-body").innerHTML = "";
+            }
+
+            async function showResult() {
+                const row = await fetchRow();
+                if (!row) { renderLobby(); return; }
+                matchRow = row;
+                const won = row.winner_id === currentUserId;
+                const myCol = mySide === "host" ? "host" : "guest";
+                const oldR = (myCol === "host" ? row.host_rating : row.guest_rating);
+                const delta = (myCol === "host" ? row.host_rating_delta : row.guest_rating_delta);
+                const oldRating = oldR != null ? oldR : 100;
+                const newR = oldRating + (delta || 0);
+                $("result-title").textContent = won ? "VICTORY!" : "DEFEAT!";
+                $("result-title").style.color = won ? "#ffff55" : "#ff5555";
+                const body = $("result-body");
+                body.innerHTML = "";
+                const deltaStr = (delta >= 0 ? "+" : "") + (delta || 0);
+                const lines = [
+                    "Elo: " + oldRating + " → " + newR + "  (" + deltaStr + ")",
+                    "Rank: " + rankHtml(oldRating) + " → " + rankHtml(newR)
+                ];
+                if (myClearTime != null) lines.push("Clear Time: " + fmtTime(myClearTime));
+                if (won) {
+                    const opp = mySide === "host" ? (row.guest_progress || {}) : (row.host_progress || {});
+                    if (opp.phase === "lost") lines.push("Opponent left — you win!");
+                }
+                lines.forEach(function (t) {
+                    const d = document.createElement("div");
+                    d.className = "ranked-text";
+                    d.innerHTML = t;
+                    body.appendChild(d);
+                });
+                showView("view-result");
+            }
+
+            // —— Elo 结算（幂等：finished_at 已存在则跳过） ——
+            async function finalizeMatch(winnerId) {
+                if (!supabaseClient || !roomCode) return;
+                const row = await fetchRow();
+                if (!row) return;
+                if (row.finished_at) return;
+                const hostId = row.host_id;
+                const guestId = row.guest_id;
+                if (!hostId) return;
+                const hostRating = row.host_rating != null ? row.host_rating : 100;
+                const guestRating = row.guest_rating != null ? row.guest_rating : 100;
+                const winner = winnerId;
+                const hostScore = (winner === hostId) ? 1 : 0;
+                const guestScore = (winner === guestId) ? 1 : 0;
+                const hostNew = newRating(hostRating, guestRating, hostScore);
+                const guestNew = newRating(guestRating, hostRating, guestScore);
+                const hostDelta = hostNew - hostRating;
+                const guestDelta = guestNew - guestRating;
+
+                await supabaseClient.from("ranked_matches").update({
+                    winner_id: winner,
+                    host_rating_delta: hostDelta,
+                    guest_rating_delta: guestDelta,
+                    status: "finished",
+                    finished_at: new Date().toISOString()
+                }).eq("id", roomCode);
+
+                await applyProfileResult(hostId, hostNew, hostScore);
+                await applyProfileResult(guestId, guestNew, guestScore);
+            }
+
+            async function applyProfileResult(uid, newRatingVal, score) {
+                if (!uid) return;
+                const { data } = await supabaseClient.from("ranked_profiles").select("*").eq("id", uid).maybeSingle();
+                const cur = data || { rating: 100, wins: 0, losses: 0, games: 0 };
+                const wins = (cur.wins || 0) + (score === 1 ? 1 : 0);
+                const losses = (cur.losses || 0) + (score === 0 ? 1 : 0);
+                const games = (cur.games || 0) + 1;
+                await supabaseClient.from("ranked_profiles").upsert({
+                    id: uid,
+                    rating: newRatingVal,
+                    wins: wins,
+                    losses: losses,
+                    games: games,
+                    updated_at: new Date().toISOString()
+                });
+            }
+
+            function startPoll(fn) {
+                stopPoll();
+                pollTimer = setInterval(fn, 1500);
+            }
+            function stopPoll() {
+                if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+            }
+
+            // 页面退出时尽力标记为离开，让对手判胜
+            window.addEventListener("beforeunload", function () {
+                if ((window.__activePhase === "lv3" || window.__activePhase === "lv6") && supabaseClient && roomCode) {
+                    const col = mySide === "host" ? "host_progress" : "guest_progress";
+                    supabaseClient.from("ranked_matches").update({ [col]: { phase: "lost" } }).eq("id", roomCode);
+                }
+            });
+
+            $("create-room-btn").addEventListener("click", createRoom);
+            $("join-room-btn").addEventListener("click", function () {
+                const inp = $("join-code-input");
+                if (inp.style.display === "none" || inp.style.display === "") {
+                    inp.style.display = "block";
+                    inp.focus();
+                } else {
+                    joinRoom();
+                }
+            });
+            $("join-code-input").addEventListener("keydown", function (e) { if (e.key === "Enter") joinRoom(); });
+            $("ready-btn").addEventListener("click", toggleReady);
+            $("leave-btn").addEventListener("click", leaveWaiting);
+            $("solo-btn").addEventListener("click", startSolo);
+            $("result-back-btn").addEventListener("click", function () {
+                if (soloMode) { soloMode = false; $("ranked-progress").style.display = ""; renderLobby(); }
+                else window.location.href = 'index.html';
+            });
+
+            initPage();
+        })();
+    </script>
+
+    <script>
+        // ================= 打龙阶段（level6 逻辑照抄，作用域隔离） =================
+        (function () {
+        // ================= 基础常量 =================
+        const AXIS = 100;           // 实部/虚部范围 ±100
+        const UNIT_VW = 5.25;       // 1 格 = 5.25vw（lv1~3 单位 10.5vw 的一半）
+        const PLAY_R = 55;          // 玩家活动半径（格）
+        const SPIKE_R = 64;         // End Spike 模长（格）
+        const CRYSTAL_HIT_R = 1;    // 水晶命中半径（格）
+        const DRAGON_HIT_R = 10;    // 末影龙命中半径（格）：落点距龙中心 ±10 格内均命中（r 允许 ±10 误差）
+        const PLAYER_SPEED = 0.006; // 玩家速度（格/ms）
+        const ARROW_SPEED = 90;     // 箭矢水平速度（格/s）
+        const CROSSBOW_MAX = 60;    // 弩箭可用次数
+        const DRAGON_HP_MAX = 100;
+
+        const numberLineWrap = document.querySelector('.number-line-wrap');
+        const world = document.getElementById('world');
+        let unitPx = window.innerWidth * UNIT_VW / 100;
+
+        function applyWorldSize() {
+            world.style.width = (AXIS * 2 * unitPx) + 'px';
+            world.style.setProperty('--imaginary-unit', unitPx + 'px');
+        }
+        applyWorldSize();
+
+        if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+        // 把原点居中到视口中央。world 的 transform-origin 是 50% 50%（原点=world 中心），
+        // 缩放围绕中心点进行，故 world 视觉中心与 scrollLeft 是 1:1 线性关系，无需按 scale 折算。
+        function centerCamera() {
+            if (!numberLineWrap || !world) return;
+            const wr = numberLineWrap.getBoundingClientRect();
+            const r = world.getBoundingClientRect();
+            numberLineWrap.scrollLeft += (r.left + r.width / 2) - (wr.left + wr.width / 2);
+            window.scrollBy(0, (r.top + r.height / 2) - window.innerHeight / 2);
+        }
+
+        // ================= 数轴刻度（白轴黑底，实部虚部都标数字） =================
+        const scale = document.getElementById('number-scale');
+        const imaginaryScale = document.getElementById('imaginary-scale');
+        const imaginaryScaleNeg = document.getElementById('imaginary-scale-neg');
+
+        for (let v = -AXIS; v <= AXIS; v += 5) {
+            const pct = ((v + AXIS) / (AXIS * 2)) * 100;
+            const tick = document.createElement('div');
+            tick.className = 'axis-tick';
+            tick.style.left = pct + '%';
+            tick.style.height = (v % 10 === 0 ? 3 : 1.8) + 'vh';
+            scale.appendChild(tick);
+            if (v % 10 === 0) {
+                const label = document.createElement('div');
+                label.className = 'axis-label';
+                label.style.left = pct + '%';
+                label.textContent = v;
+                scale.appendChild(label);
+            }
+        }
+        // 虚轴刻度用 calc(var(--imaginary-unit)) 定位，窗口缩放时自动跟随
+        for (let v = 5; v <= AXIS; v += 5) {
+            const tick = document.createElement('div');
+            tick.className = 'imaginary-tick';
+            tick.style.bottom = `calc(var(--imaginary-unit) * ${v} - 1px)`;
+            tick.style.height = (v % 10 === 0 ? 3 : 1.8) + 'vh';
+            imaginaryScale.appendChild(tick);
+            if (v % 10 === 0) {
+                const label = document.createElement('div');
+                label.className = 'imaginary-label';
+                label.style.bottom = `calc(var(--imaginary-unit) * ${v} - 9px)`;
+                label.textContent = v + 'i';
+                imaginaryScale.appendChild(label);
+            }
+
+            const tickN = document.createElement('div');
+            tickN.className = 'imaginary-tick';
+            tickN.style.top = `calc(var(--imaginary-unit) * ${v} - 1px)`;
+            tickN.style.height = (v % 10 === 0 ? 3 : 1.8) + 'vh';
+            imaginaryScaleNeg.appendChild(tickN);
+            if (v % 10 === 0) {
+                const labelN = document.createElement('div');
+                labelN.className = 'imaginary-label';
+                labelN.style.top = `calc(var(--imaginary-unit) * ${v} - 9px)`;
+                labelN.textContent = '-' + v + 'i';
+                imaginaryScaleNeg.appendChild(labelN);
+            }
+        }
+
+        // ================= End Spike × 8 + End Crystal =================
+        // 6 个 End Spike 在模长 64（已删除 135° 与 315°）；180°（即 -64）换成 with cage
+        const SPIKE_ANGLES = [0, 45, 90, 180, 225, 270];
+        const crystals = SPIKE_ANGLES.map((deg) => {
+            const rad = deg * Math.PI / 180;
+            const xu = Math.cos(rad) * SPIKE_R;
+            const yu = Math.sin(rad) * SPIKE_R;
+            const caged = deg === 180;
+
+            const spike = document.createElement('img');
+            spike.className = 'endspike-sprite';
+            spike.src = caged ? 'pngs/End_spike_with_Cage.png.webp' : 'pngs/endspike.png';
+            spike.alt = '';
+            spike.style.left = `calc(50% + var(--imaginary-unit) * ${xu} + 0.3vw)`;
+            spike.style.top = `calc(50% - var(--imaginary-unit) * ${yu} + 63.7vh)`;
+            world.appendChild(spike);
+
+            // caged 柱子（180°）笼里已含水晶，不再额外加水晶；其余柱子顶部立水晶
+            let el = null;
+            if (!caged) {
+                const crystal = document.createElement('img');
+                crystal.className = 'crystal-sprite';
+                crystal.src = 'pngs/End_Crystal_JE2.gif';
+                crystal.alt = '';
+                crystal.style.left = `calc(50% + var(--imaginary-unit) * ${xu})`;
+                crystal.style.top = `calc(50% - var(--imaginary-unit) * ${yu})`;
+                world.appendChild(crystal);
+                el = crystal;
+            }
+
+            return { deg, xu, yu, caged, destroyed: false, el, spike };
+        });
+
+        // ================= 地图（槽位 2）：Map_Empty + 8 个水晶图标/红 X =================
+        const mapOverlay = document.getElementById('map-overlay');
+        const mapIconsBox = document.getElementById('map-icons');
+        const MAP_R = 38; // 图标分布半径（占地图边长的百分比）
+        const mapEls = crystals.map((c) => {
+            const rad = c.deg * Math.PI / 180;
+            const wrap = document.createElement('span');
+            wrap.className = 'map-spot';
+            // 水晶标整体偏移：8 个标保持 45° 环对称（上下左右在中线上、对角 45°），同步右移 2vw
+            wrap.style.left = `calc(${(50 + MAP_R * Math.cos(rad)).toFixed(2)}% + 1.5vw)`;
+            wrap.style.top = (50 - MAP_R * Math.sin(rad)).toFixed(2) + '%';
+            const icon = document.createElement('img');
+            icon.src = 'pngs/End_Crystal_Icon.png';
+            icon.alt = '';
+            const x = document.createElement('span');
+            x.className = 'map-x';
+            x.textContent = 'X';
+            x.style.display = 'none';
+            wrap.appendChild(icon);
+            wrap.appendChild(x);
+            mapIconsBox.appendChild(wrap);
+            return { icon, x };
+        });
+        function refreshMap() {
+            crystals.forEach((c, i) => {
+                mapEls[i].icon.style.display = c.destroyed ? 'none' : 'block';
+                mapEls[i].x.style.display = c.destroyed ? 'block' : 'none';
+            });
+        }
+
+        // ================= Steve：2D 移动（WASD），限制在半径 55 的圆内 =================
+        const steve = document.getElementById('steve');
+        const steveRun = document.getElementById('steve-run');
+        const STEVE_STANDING_SRC = 'pngs/Steve_JE5.png.webp';
+        const STEVE_SNEAKING_SRC = 'pngs/Sneaking_Steve.png.webp';
+        let isSneaking = false;
+        let isMoving = false;
+        let sprintToggle = false;
+        let sprintInterval = null;
+
+        function updateSteveSprite() {
+            if (!steve) return;
+            const running = isMoving && !isSneaking && sprintToggle;
+            if (steveRun) steveRun.classList.toggle('show', running);
+            steve.classList.toggle('steve-hidden', running);
+            steve.src = isSneaking ? STEVE_SNEAKING_SRC : STEVE_STANDING_SRC;
+            steve.classList.toggle('steve-sneaking', isSneaking);
+        }
+        function setSneaking(sneaking) {
+            if (!steve || isSneaking === sneaking) return;
+            isSneaking = sneaking;
+            updateSteveSprite();
+        }
+        function setMoving(moving) {
+            if (!steve || isMoving === moving) return;
+            isMoving = moving;
+            if (moving && !sprintInterval) {
+                sprintToggle = true;
+                sprintInterval = setInterval(() => {
+                    if (!isMoving || isSneaking) return;
+                    sprintToggle = !sprintToggle;
+                    updateSteveSprite();
+                }, 100);
+            } else if (!moving && sprintInterval) {
+                clearInterval(sprintInterval);
+                sprintInterval = null;
+                sprintToggle = false;
+            }
+            updateSteveSprite();
+        }
+
+        // 玩家位置用"格"存储，渲染时乘 unitPx（缩放/resize 自动正确）
+        let pux = 0, puy = 0; // 实部 / 虚部（格）
+        let jumpOffset = 0;
+        const pressedKeys = new Set();
+        let facingRight = false;
+        let lastPx = null, lastPy = null, lastJump = null;
+
+        const coordZLine = document.getElementById('coord-z');
+        function updateSteveCoordLabel() {
+            if (!coordZLine) return;
+            const real = Math.round(pux);
+            const imag = Math.round(puy);
+            if (real === 0 && imag === 0) {
+                coordZLine.textContent = 'z = 0';
+                return;
+            }
+            const r = Math.round(Math.hypot(real, imag));
+            let theta = Math.atan2(imag, real);
+            if (theta < 0) theta += Math.PI * 2;
+            coordZLine.textContent = `z = ${r}cis(${theta.toFixed(2)})`;
+        }
+
+        function updateStevePosition() {
+            if (!steve) return;
+            const px = pux * unitPx;
+            const py = -puy * unitPx + jumpOffset;
+            const flip = facingRight ? ' scaleX(-1)' : '';
+            const transform = `translate(calc(-50% + ${px}px), ${py}px)${flip}`;
+            steve.style.transform = transform;
+            if (steveRun) steveRun.style.transform = transform;
+            updateSteveCoordLabel();
+            if (px !== lastPx || py !== lastPy || jumpOffset !== lastJump) {
+                followSteveIntoView();
+            }
+            lastPx = px; lastPy = py; lastJump = jumpOffset;
+        }
+
+        function playOneTimeJump() {
+            const peakHeight = unitPx * 1.1;
+            const timeToPeak = 0.225;
+            const gravity = (2 * peakHeight) / (timeToPeak * timeToPeak);
+            const initialVelocity = gravity * timeToPeak;
+            const start = performance.now();
+            function step(now) {
+                const t = (now - start) / 1000;
+                const height = initialVelocity * t - 0.5 * gravity * t * t;
+                if (height > 0) {
+                    jumpOffset = -height;
+                    updateStevePosition();
+                    requestAnimationFrame(step);
+                } else {
+                    jumpOffset = 0;
+                    updateStevePosition();
+                }
+            }
+            requestAnimationFrame(step);
+        }
+
+        // 让史蒂夫始终锁定在屏幕正中央：相机反向滚动世界，使史蒂夫视觉中心对齐 wrap 中心与窗口中心。
+        // world 的 scale 围绕其中心(原点)进行，史蒂夫与 world 刚性绑定，随 scrollLeft / window.scrollY 均按 1:1 移动（无需按 scale 折算）。
+        function followSteveIntoView() {
+            if (!steve || !numberLineWrap) return;
+            const steveRect = steve.getBoundingClientRect();
+            const wrapRect = numberLineWrap.getBoundingClientRect();
+            // 横向：把史蒂夫视觉中心滚到 wrap 中心
+            numberLineWrap.scrollLeft += (steveRect.left + steveRect.width / 2) - (wrapRect.left + wrapRect.width / 2);
+            // 纵向：把史蒂夫视觉中心滚到窗口中心
+            window.scrollBy(0, (steveRect.top + steveRect.height / 2) - window.innerHeight / 2);
+            // 夹紧横向滚动范围，避免滚进黑底空白区域
+            const maxScrollX = numberLineWrap.scrollWidth - numberLineWrap.clientWidth;
+            if (numberLineWrap.scrollLeft < 0) numberLineWrap.scrollLeft = 0;
+            else if (maxScrollX > 0 && numberLineWrap.scrollLeft > maxScrollX) numberLineWrap.scrollLeft = maxScrollX;
+        }
+
+        // ================= 开场：Welcome 横幅 3s → 画面缩放到 50 格视角 =================
+        let introDone = false;
+        const levelBanner = document.getElementById('level-banner');
+
+        function introTargetScale() {
+            // 放大目标：横向 -25~25（50 格）可见
+            return numberLineWrap.clientWidth / (50 * unitPx);
+        }
+
+        function startIntro() {
+            centerCamera();
+            // 初始缩放：整个 ±100 平面（横向 200 格）一页放得下
+            const s0 = Math.min(
+                numberLineWrap.clientWidth / (AXIS * 2 * unitPx),
+                window.innerHeight / (AXIS * 2 * unitPx)
+            );
+            world.style.transition = 'none';
+            world.style.transform = `scale(${s0})`;
+            void world.offsetWidth; // 强制 reflow，让初始 scale 立即生效
+            world.style.transition = '';
+
+            requestAnimationFrame(() => levelBanner.classList.add('show'));
+            setTimeout(() => {
+                levelBanner.classList.remove('show');
+                setTimeout(() => {
+                    // 放大画面：视角收缩到 -50~50
+                    world.style.transform = `scale(${introTargetScale()})`;
+                    setTimeout(() => {
+                        world.style.transition = 'none';
+                        introDone = true;
+                        levelBanner.textContent = 'Defeat the Ender Dragon!';
+                        levelBanner.classList.add('show');
+                        setTimeout(() => levelBanner.classList.remove('show'), 3000);
+                    }, 2600);
+                }, 450);
+            }, 3000);
+        }
+
+        window.addEventListener('resize', () => {
+            unitPx = window.innerWidth * UNIT_VW / 100;
+            applyWorldSize();
+            if (!introDone) {
+                const s0 = Math.min(
+                    numberLineWrap.clientWidth / (AXIS * 2 * unitPx),
+                    window.innerHeight / (AXIS * 2 * unitPx)
+                );
+                world.style.transition = 'none';
+                world.style.transform = `scale(${s0})`;
+            } else {
+                applyWorldZoom();
+            }
+            centerCamera();
+        });
+
+        // ================= 末影龙 =================
+        const dragonSprite = document.getElementById('dragon-sprite');
+        const dragonImg = document.getElementById('dragon-img');
+        const dragonLabel = document.getElementById('dragon-label');
+        const dragonRLabel = document.getElementById('dragon-r');
+        const dragonExp = document.getElementById('dragon-exp');
+        const bossProgress = document.getElementById('boss-progress');
+
+        let dragonAlive = true;
+        let dragonHP = DRAGON_HP_MAX;
+        let dragonR = 30;           // 初始飞行半径 r=30
+        let dragonTheta = 0;        // 初始角度 0
+        let radiusTimer = 0;        // 每 15s 判定一次半径变化
+        const DRAGON_OMEGA = Math.PI * 2 / 30000; // 匀速：30s 一圈（rad/ms）
+
+        function updateBossBar() {
+            const hp = Math.max(0, Math.min(DRAGON_HP_MAX, dragonHP));
+            bossProgress.style.clipPath = `inset(0 ${100 - hp}% 0 0)`;
+        }
+        function crystalsRemaining() {
+            return crystals.some((c) => !c.destroyed);
+        }
+
+        function updateDragon(dt) {
+            if (!dragonAlive) return;
+            dragonTheta += DRAGON_OMEGA * dt;
+            dragonTheta %= Math.PI * 2; // 保持 0~2π（约 0~6.28），不无限累加
+            radiusTimer += dt;
+            if (radiusTimer >= 15000) {
+                radiusTimer -= 15000;
+                if (Math.random() < 0.4) {
+                    const dir = Math.random() < 0.5 ? -5 : 5;
+                    dragonR = Math.max(15, Math.min(60, dragonR + dir));
+                }
+            }
+            // 未全部摧毁水晶：每秒回 2 血
+            if (crystalsRemaining() && dragonHP < DRAGON_HP_MAX) {
+                dragonHP = Math.min(DRAGON_HP_MAX, dragonHP + 2 * dt / 1000);
+                updateBossBar();
+            }
+            renderDragon();
+        }
+
+        let lastDragonPx = null;
+        function renderDragon() {
+            const dxu = dragonR * Math.cos(dragonTheta);
+            const dyu = dragonR * Math.sin(dragonTheta);
+            const px = dxu * unitPx;
+            const py = -dyu * unitPx;
+            dragonSprite.style.transform = `translate(calc(-50% + ${px}px), calc(-50% + ${py}px))`;
+            const lift = unitPx * 12; // 标签靠在龙头上方（龙高 24 格，半高 12 格）
+            dragonLabel.style.transform = `translate(calc(-50% + ${px}px), calc(-100% + ${py - lift}px + 115vh))`;
+            // 朝向：gif 默认朝左，向右飞时水平翻转
+            if (lastDragonPx !== null) {
+                const dx = px - lastDragonPx;
+                if (dx > 0.15) dragonImg.classList.add('flip');
+                else if (dx < -0.15) dragonImg.classList.remove('flip');
+            }
+            lastDragonPx = px;
+            // 指数式 re^iθ：θ 为弧度数值（不带 π）
+            let th = dragonTheta % (Math.PI * 2);
+            if (th < 0) th += Math.PI * 2;
+            dragonRLabel.textContent = Math.round(dragonR);
+            dragonExp.textContent = 'i(' + th.toFixed(2) + ')';
+        }
+
+        function killDragon() {
+            dragonAlive = false;
+            dragonSprite.classList.add('dead');
+            dragonLabel.classList.add('dead');
+            activatePortal();
+            showToast(advTheEnd);
+            showToast(advFreeEnd, 3000);
+        }
+
+        // ================= 箭矢（平抛轨迹 + 靠近落点减速） =================
+        const arrows = [];
+        function fireArrow(txu, tyu) {
+            const el = document.createElement('img');
+            el.className = 'arrow-sprite';
+            el.src = 'pngs/Arrow.png';
+            el.alt = '';
+            world.appendChild(el);
+            const dist = Math.hypot(txu - pux, tyu - puy);
+            arrows.push({
+                sxu: pux, syu: puy, txu, tyu,
+                t0: performance.now(),
+                dur: Math.max(300, dist / ARROW_SPEED * 1000),
+                arc: Math.max(2, Math.min(10, dist / 6)), // 抛物线拱高（格）
+                el, landed: false, landAt: 0, fading: false, done: false,
+            });
+        }
+
+        function arrowPosAt(a, p) {
+            const eased = 1 - (1 - p) * (1 - p); // 靠近落点减速
+            const x = a.sxu + (a.txu - a.sxu) * eased;
+            const y = a.syu + (a.tyu - a.syu) * eased - a.arc * 4 * p * (1 - p); // 平抛抛物线
+            return [x, y];
+        }
+
+        function updateArrows(now) {
+            for (const a of arrows) {
+                if (a.done) continue;
+                if (!a.landed) {
+                    const p = Math.min((now - a.t0) / a.dur, 1);
+                    const [x, y] = arrowPosAt(a, p);
+                    // 朝向 = 速度方向（Arrow.png 自然指向右上约 -37°）
+                    const [x2, y2] = arrowPosAt(a, Math.min(p + 0.02, 1));
+                    const ang = Math.atan2(-(y2 - y), x2 - x) * 180 / Math.PI;
+                    const px = x * unitPx, py = -y * unitPx;
+                    a.el.style.transform = `translate(calc(-50% + ${px}px), calc(-50% + ${py}px)) rotate(${(ang + 37).toFixed(1)}deg)`;
+                    if (p >= 1) {
+                        a.landed = true;
+                        a.landAt = now;
+                        resolveArrowHit(a.txu, a.tyu);
+                    }
+                } else if (!a.fading && now - a.landAt >= 3000) {
+                    a.fading = true;
+                    a.el.classList.add('fade'); // 落地等待 3s 后淡出
+                } else if (a.fading && now - a.landAt >= 3500) {
+                    a.el.remove();
+                    a.done = true;
+                }
+            }
+        }
+
+        function resolveArrowHit(txu, tyu) {
+            // 先判水晶（方圆 1 格），再判末影龙
+            for (const c of crystals) {
+                if (c.destroyed) continue;
+                if (Math.hypot(txu - c.xu, tyu - c.yu) <= CRYSTAL_HIT_R) {
+                    destroyCrystal(c);
+                    checkFail();
+                    return;
+                }
+            }
+            if (dragonAlive) {
+                const dxu = dragonR * Math.cos(dragonTheta);
+                const dyu = dragonR * Math.sin(dragonTheta);
+                if (Math.hypot(txu - dxu, tyu - dyu) <= DRAGON_HIT_R) {
+                    hitDragon();
+                }
+            }
+            checkFail();
+        }
+
+        // ================= 首次命中 → Take Aim / Hints =================
+        const advTakeAim = document.getElementById('advancement-takeaim');
+        const advTheEnd = document.getElementById('advancement-theend');
+        const advFreeEnd = document.getElementById('advancement-freeend');
+        const hintsToast = document.getElementById('hints-toast');
+        let firstHitDone = false;
+        let hintsTimer = null;
+        let advTimerAim = null;
+        let advTimerEnd = null;
+
+        function showToast(el, ms) {
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), ms);
+        }
+        function onFirstHit(kind) {
+            if (firstHitDone) return;
+            firstHitDone = true;
+            if (advTimerAim) clearTimeout(advTimerAim);
+            advTakeAim.classList.add('show');
+            advTimerAim = setTimeout(() => advTakeAim.classList.remove('show'), 3000);
+            // 首次命中是末影龙（而非水晶）→ 弹出 Hints
+            if (kind === 'dragon') {
+                if (hintsTimer) clearTimeout(hintsTimer);
+                hintsToast.classList.add('show');
+                hintsTimer = setTimeout(() => hintsToast.classList.remove('show'), 4500);
+            }
+        }
+
+        function destroyCrystal(c) {
+            c.destroyed = true;
+            if (c.el) {
+                c.el.classList.add('boom'); // 爆炸：放大 + 淡出
+                setTimeout(() => { c.el.style.visibility = 'hidden'; }, 450);
+            } else {
+                // caged 黑曜石柱：打碎后直接换成普通黑曜石柱（去掉笼子）
+                c.spike.src = 'pngs/endspike.png';
+            }
+            refreshMap();
+            onFirstHit('crystal');
+            if (c.deg === 180) startQuizFlow(); // 打碎 -64 水晶 → 放大并触发解方程
+        }
+
+        function hitDragon() {
+            dragonHP = Math.max(0, dragonHP - 25);
+            updateBossBar();
+            onFirstHit('dragon');
+            if (dragonHP <= 0) killDragon();
+        }
+
+        // ================= 弩箭（槽位 1） =================
+        const hotbar = document.getElementById('hotbar');
+        const slotEls = [];
+        let selectedSlot = null;
+        let shotsFired = 0;
+        let crossbowLoaded = true;
+        let crossbowRefilling = false;
+        const crossbowTutorial = document.getElementById('crossbow-tutorial');
+        let crossbowTipShown = false;
+
+        const crossbowImg = document.createElement('img');
+        crossbowImg.className = 'slot-item crossbow-in-slot';
+        crossbowImg.src = 'pngs/Crossbow_Loaded.png';
+        crossbowImg.alt = 'Crossbow';
+        const durabilityBar = document.createElement('div');
+        durabilityBar.className = 'durability-bar'; // lv6：首次使用后才显示
+        const durabilityBg = document.createElement('img');
+        durabilityBg.src = 'pngs/green_background.png';
+        durabilityBg.alt = '';
+        const durabilityProgress = document.createElement('img');
+        durabilityProgress.src = 'pngs/green_progress.png';
+        durabilityProgress.alt = '';
+        durabilityBar.appendChild(durabilityBg);
+        durabilityBar.appendChild(durabilityProgress);
+
+        const mapInSlot = document.createElement('img');
+        mapInSlot.className = 'slot-item map-in-slot';
+        mapInSlot.src = 'pngs/Map_Icon.png';
+        mapInSlot.alt = 'Map';
+
+        for (let i = 0; i < 9; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'hotbar-slot';
+            const baseImg = document.createElement('img');
+            baseImg.src = 'pngs/hotbar_offhand_right.png';
+            baseImg.alt = '';
+            slot.appendChild(baseImg);
+            if (i === 0) { slot.appendChild(crossbowImg); slot.appendChild(durabilityBar); }
+            if (i === 1) slot.appendChild(mapInSlot);
+            const selImg = document.createElement('img');
+            selImg.className = 'slot-selection';
+            selImg.src = 'pngs/hotbar_selection.png';
+            selImg.alt = '';
+            slot.appendChild(selImg);
+            slot.addEventListener('click', (event) => {
+                event.stopPropagation();
+                setSelectedSlot(selectedSlot === i ? null : i);
+            });
+            hotbar.appendChild(slot);
+            slotEls.push(slot);
+        }
+
+        function setSelectedSlot(idx) {
+            selectedSlot = idx;
+            slotEls.forEach((el, i) => el.classList.toggle('selected', i === idx));
+            mapOverlay.classList.toggle('show', idx === 1); // 选中地图时展示地图
+            if (idx === 0 && !crossbowTipShown) {
+                crossbowTipShown = true;
+                crossbowTutorial.classList.add('show');
+                setTimeout(() => crossbowTutorial.classList.remove('show'), 8000);
+            }
+        }
+
+        function updateDurabilityBar() {
+            durabilityProgress.style.width = Math.max(0, (CROSSBOW_MAX - shotsFired) / CROSSBOW_MAX * 100) + '%';
+        }
+
+        // 使用弩箭：消耗 1 次 → Empty → 0.2s/张依次播放 Pull_0/1/2 → Loaded（停住）
+        function consumeCrossbow() {
+            shotsFired += 1;
+            updateDurabilityBar();
+            durabilityBar.classList.add('show');
+            crossbowLoaded = false;
+            crossbowRefilling = true;
+            crossbowImg.src = 'pngs/Crossbow_Empty.png';
+            setTimeout(() => { crossbowImg.src = 'pngs/Crossbow_Pull_0.png'; }, 200);
+            setTimeout(() => { crossbowImg.src = 'pngs/Crossbow_Pull_1.png'; }, 400);
+            setTimeout(() => { crossbowImg.src = 'pngs/Crossbow_Pull_2.png'; }, 600);
+            setTimeout(() => {
+                crossbowImg.src = 'pngs/Crossbow_Loaded.png';
+                crossbowRefilling = false;
+                crossbowLoaded = true;
+            }, 800);
+        }
+
+        // ================= 瞄准弹窗：rcis(a/b pi) 或 rcis(theta deg) =================
+        const aimModal = document.getElementById('aim-modal');
+        const aimInput = document.getElementById('aim-input');
+        const aimConfirm = document.getElementById('aim-confirm');
+        let aimWrong = false;
+
+        function tryOpenAim() {
+            if (!introDone || hasWon || hasFailed) return;
+            if (!crossbowLoaded || crossbowRefilling) return;
+            if (quizModal.classList.contains('show') || aimModal.classList.contains('show')) return;
+            aimInput.value = '';
+            aimInput.classList.remove('wrong');
+            aimWrong = false;
+            aimModal.classList.add('show');
+            setTimeout(() => aimInput.focus(), 50);
+        }
+        function closeAimModal() {
+            aimModal.classList.remove('show');
+        }
+        function clearAimWrong(keepText) {
+            if (!aimWrong) return;
+            aimWrong = false;
+            if (!keepText) aimInput.value = '';
+            aimInput.classList.remove('wrong');
+        }
+        aimInput.addEventListener('mousedown', () => clearAimWrong(false));
+        aimInput.addEventListener('focus', () => clearAimWrong(false));
+        aimInput.addEventListener('input', () => clearAimWrong(true));
+        aimInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') submitAim();
+            if (event.key === 'Escape') closeAimModal();
+        });
+        aimConfirm.addEventListener('click', submitAim);
+        // Esc 全局退出瞄准弹窗（即使输入框失焦也能关闭）
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && aimModal.classList.contains('show')) closeAimModal();
+        });
+
+        function parseAim(raw) {
+            // 弧度制·分数（pi）：64cis(1/4 pi)
+            let m = raw.match(/^(\d*\.?\d+)\s*cis\s*\(\s*(-?\d+)\s*\/\s*(\d+)\s*(?:pi|π)\s*\)$/i);
+            if (m) {
+                return [parseFloat(m[1]), (parseInt(m[2], 10) / parseInt(m[3], 10)) * Math.PI];
+            }
+            // 弧度制·小数（pi）：64cis(0.25 pi)
+            m = raw.match(/^(\d*\.?\d+)\s*cis\s*\(\s*(-?\d*\.?\d+)\s*(?:pi|π)\s*\)$/i);
+            if (m) {
+                return [parseFloat(m[1]), parseFloat(m[2]) * Math.PI];
+            }
+            // 角度制·带单位：64cis(45 deg) / 64cis(45°)
+            m = raw.match(/^(\d*\.?\d+)\s*cis\s*\(\s*(-?\d*\.?\d+)\s*(?:deg|°)\s*\)$/i);
+            if (m) {
+                return [parseFloat(m[1]), parseFloat(m[2]) * Math.PI / 180];
+            }
+            // 角度制·纯数字：64cis(45) 视为角度
+            m = raw.match(/^(\d*\.?\d+)\s*cis\s*\(\s*(-?\d*\.?\d+)\s*\)$/i);
+            if (m) {
+                return [parseFloat(m[1]), parseFloat(m[2]) * Math.PI / 180];
+            }
+            return null;
+        }
+
+        function submitAim() {
+            if (!aimModal.classList.contains('show')) return;
+            const parsed = parseAim(aimInput.value.trim());
+            if (!parsed) { markAimWrong(); return; }
+            let [r, theta] = parsed;
+            theta = ((theta % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+            r = Math.max(0, Math.min(AXIS, r)); // 落点钳制在世界范围内
+            closeAimModal();
+            consumeCrossbow();
+            fireArrow(r * Math.cos(theta), r * Math.sin(theta));
+        }
+        function markAimWrong() {
+            aimWrong = true;
+            aimInput.classList.add('wrong');
+            aimInput.value = 'WRONG ANSWER.';
+            aimInput.select();
+        }
+
+        // 60 支箭用完仍末影龙未归零 → 失败
+        function checkFail() {
+            if (hasWon || hasFailed) return;
+            if (dragonAlive && shotsFired >= CROSSBOW_MAX) showFailOverlay();
+        }
+
+        // ================= 答题（击中 -64 水晶触发）：z^4=64cis pi 四个根 =================
+        const quizModal = document.getElementById('quiz-modal');
+        const quizInput = document.getElementById('quiz-input');
+        const quizConfirm = document.getElementById('quiz-confirm');
+        const ROOTS = [0.25, 0.75, 1.25, 1.75]; // θ/π（mod 2）
+        const R_EXPECT = 2.83;
+        let remainingRoots = ROOTS.slice();
+        let wrongState = false;
+
+        function openQuizModal() {
+            quizInput.value = '';
+            quizInput.classList.remove('wrong');
+            wrongState = false;
+            quizModal.classList.add('show');
+            setTimeout(() => quizInput.focus(), 50);
+        }
+        function clearWrongState(keepText) {
+            if (!wrongState) return;
+            wrongState = false;
+            if (!keepText) quizInput.value = '';
+            quizInput.classList.remove('wrong');
+        }
+        quizInput.addEventListener('mousedown', () => clearWrongState(false));
+        quizInput.addEventListener('focus', () => clearWrongState(false));
+        quizInput.addEventListener('input', () => clearWrongState(true));
+        quizInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') submitAnswer();
+        });
+        quizConfirm.addEventListener('click', submitAnswer);
+
+        let quizFlowStarted = false;
+        function startQuizFlow() {
+            if (quizFlowStarted) return;
+            quizFlowStarted = true;
+            // 先让原点居中，再放大到只显示 -10~10（20 格宽），等动画结束再弹 z^4=64 弹窗
+            centerCamera();
+            const s = numberLineWrap.clientWidth / (20 * unitPx);
+            world.style.transition = '';
+            world.style.transform = `scale(${s})`;
+            setTimeout(() => {
+                world.style.transition = 'none';
+                centerCamera();
+                openQuizModal();
+            }, 2600);
+        }
+
+        // 平滑缩放世界（放大/缩小共用），动画结束后关闭过渡，避免影响用户滚轮缩放
+        function zoomWorldTo(scaleValue, durationMs = 2500, after = null) {
+            centerCamera();
+            world.style.transition = `transform ${durationMs}ms cubic-bezier(0.45,0.05,0.35,1)`;
+            world.style.transform = `scale(${scaleValue})`;
+            setTimeout(() => {
+                world.style.transition = 'none';
+                centerCamera();
+                if (after) after();
+            }, durationMs);
+        }
+
+        function submitAnswer() {
+            if (!quizModal.classList.contains('show')) return;
+            const raw = quizInput.value.trim();
+            const match = raw.match(/^([0-9]*\.?[0-9]+)\s*cis\s*\(\s*(-?\d+)\s*\/\s*(\d+)\s*(?:pi|π)\s*\)$/i);
+            if (!match) { markWrong(); return; }
+            const r = parseFloat(match[1]);
+            const frac = parseInt(match[2], 10) / parseInt(match[3], 10);
+            if (Math.abs(r - R_EXPECT) > 0.005) { markWrong(); return; }
+            const norm = ((frac % 2) + 2) % 2;
+            const idx = remainingRoots.findIndex((v) => Math.abs(v - norm) < 1e-6);
+            if (idx === -1) { markWrong(); return; }
+            remainingRoots.splice(idx, 1);
+            quizModal.classList.remove('show');
+            spawnBedrock(norm);
+            if (remainingRoots.length > 0) {
+                setTimeout(openQuizModal, 300);
+            } else {
+                setTimeout(spawnPortalFrame, 300); // 四根集齐 → 一圈 bedrock
+            }
+        }
+
+        function markWrong() {
+            wrongState = true;
+            quizInput.classList.add('wrong');
+            quizInput.value = 'WRONG ANSWER.';
+            quizInput.select();
+        }
+
+        function spawnBedrock(thetaOverPi) {
+            const bedrock = document.createElement('img');
+            bedrock.className = 'bedrock-sprite';
+            bedrock.src = 'pngs/bedrock.png';
+            bedrock.alt = 'Root';
+            const x = R_EXPECT * Math.cos(thetaOverPi * Math.PI);
+            const y = R_EXPECT * Math.sin(thetaOverPi * Math.PI);
+            bedrock.style.transform = `translate(calc(-50% + var(--imaginary-unit) * ${x.toFixed(3)}), calc(50% - var(--imaginary-unit) * ${y.toFixed(3)}))`;
+            world.appendChild(bedrock);
+            requestAnimationFrame(() => bedrock.classList.add('revealed'));
+        }
+
+        // 一圈 bedrock：直边距圆心 3、同边间距 1（中心都在整数坐标上），逆时针逐个出现
+        function spawnPortalFrame() {
+            const frameSpots = [
+                [3, -1], [3, 0], [3, 1],
+                [1, 3], [0, 3], [-1, 3],
+                [-3, 1], [-3, 0], [-3, -1],
+                [-1, -3], [0, -3], [1, -3],
+                [0, 0],
+            ];
+            frameSpots.forEach(([x, y], i) => {
+                setTimeout(() => {
+                    const block = document.createElement('img');
+                    block.className = 'bedrock-sprite';
+                    block.src = 'pngs/bedrock.png';
+                    block.alt = '';
+                    block.style.transform = `translate(calc(-50% + var(--imaginary-unit) * ${x}), calc(50% - var(--imaginary-unit) * ${y}))`;
+                    world.appendChild(block);
+                    requestAnimationFrame(() => block.classList.add('revealed'));
+                }, i * 400);
+            });
+            // 一圈 bedrock 全部出现后 → 视角拉回 -25~25
+            setTimeout(() => zoomWorldTo(introTargetScale()), frameSpots.length * 400 + 200);
+        }
+
+        // ================= endportal：龙血归零激活，站入 1.5s 通关 =================
+        const endportal = document.getElementById('endportal');
+        const winOverlay = document.getElementById('win-overlay');
+        const endPoem = document.getElementById('end-poem');
+        const endPoemScroll = document.getElementById('end-poem-scroll');
+        const winBackBtn = document.getElementById('win-back-btn');
+        const failOverlay = document.getElementById('fail-overlay');
+        const failBackBtn = document.getElementById('fail-back-btn');
+        let portalActive = false;
+        let hasWon = false;
+        let hasFailed = false;
+        let winShown = false;
+        let portalDwellStart = null;
+
+        function activatePortal() {
+            if (portalActive) return;
+            portalActive = true;
+            endportal.classList.add('revealed');
+            // 传送门淡入出现后 → 视角聚焦到 -10~10
+            setTimeout(() => zoomWorldTo(numberLineWrap.clientWidth / (20 * unitPx)), 500);
+        }
+
+        function checkPortalCollision() {
+            if (!portalActive || hasWon || !steve || !endportal) return;
+            const s = steve.getBoundingClientRect();
+            const p = endportal.getBoundingClientRect();
+            const insetX = p.width * 0.05;
+            const insetY = p.height * 0.05;
+            const cx = s.left + s.width / 2;
+            const cy = s.top + s.height / 2;
+            const inCenter = (
+                cx >= p.left + insetX && cx <= p.right - insetX &&
+                cy >= p.top + insetY && cy <= p.bottom - insetY
+            );
+            if (!inCenter) {
+                portalDwellStart = null;
+                return;
+            }
+            if (portalDwellStart === null) portalDwellStart = performance.now();
+            if (performance.now() - portalDwellStart >= 2000) { showEndPoem(); }
+        }
+
+        function showFailOverlay() {
+            if (hasFailed || hasWon) return;
+            hasFailed = true;
+            failOverlay.classList.add('show');
+            if (window.onRankedLost) window.onRankedLost('lv6');
+        }
+
+        function showWinOverlay() {
+            if (winShown || hasFailed) return;
+            winShown = true;
+            persistLevel6Passed();
+            winOverlay.classList.add('show');
+            startFormulaFountain();
+            setTimeout(function () { if (window.onLv6Done) window.onLv6Done(); }, 2500);
+        }
+
+        // ================= 终末之诗（通关后滚动字幕） =================
+        let poemShown = false;
+        // 每行：[颜色, 文本]；'g'=绿色，'c'=青色，文本为 null 表示用户 ID 占位
+        const END_POEM_LINES = [
+            ['g', 'I see the player you mean.'],
+            ['c', null],
+            ['g', 'Yes. I like this player. It played well. It did not give up.'],
+            ['c', 'It tumbled into the universe of maths. It kept falling. It immersed itself deep in the world.'],
+            ['c', 'In that world, it met millions of pieces of pure love for maths.'],
+            ['g', "The player had a long dream. In its dream, it was born on a number axis. It jumped. A brand new world emerged in its sight. In that world, it encountered something it's never seen before."],
+            ['g', 'In its dream, direction had a measure. It walked as it drunk until a secret was found.'],
+            ['g', 'In its dream, sine and cosine were friends. They played with i and chased the e. De movire saw their way, taught them a trick to be quick.'],
+            ['c', 'Sometimes the player dreamed of being a human, on the broiling crust. It squatted down, observing the fissure, seeking for the deepest arcanum of the planet. That planet circled a ball of blazing gas. They were so far apart that light took eight minutes to reach the planet.'],
+            ['c', 'Sometimes the player dreamed of being an imaginary number, existing only in a virtual world. But there, in the complex plane, it can move and jump.'],
+            ['c', "Sometimes the player dreamed of being a mathematician, figuring out that, what if under the square root, there was a negative number. It ultimately unlocked another world beyond reality."],
+            ['g', 'Hah, the original interface. Five thousand years old, and it still works. But what true knowledge did this player learn, in the reality behind the screen?'],
+            ['g', 'It worked, with a billion others, to sculpt a complex world in a fold of the ...∫ √ ∞ , and created a ∆ ∅ ≠ ± for  ≤ ≥ ≠  in the  × ÷ ∞ ≈ § ● ○ ▲.'],
+            ['c', 'It cannot read that.'],
+            ['g', 'No. It has not yet achieved the highest level. That, it must achieve in the long dream of mathematical world, not the short dream of a game.'],
+            ['c', "It takes it a long journey to arrive there. It must fight till the End."],
+            ['g', 'And the game was over and the player woke up from the dream. And the player began a new dream. And the player dreamed again, dreamed better. And the player was the universe. And the player was love.'],
+            ['g', 'You are the player.'],
+            ['c', 'Wake up.'],
+        ];
+        function buildEndPoem() {
+            endPoemScroll.innerHTML = '';
+            const title = document.createElement('h1');
+            title.className = 'end-poem-title';
+            title.textContent = 'COMPLEX NUMBERS';
+            endPoemScroll.appendChild(title);
+            const uid = currentDisplayUserId || 'Player';
+            END_POEM_LINES.forEach(([color, text]) => {
+                const line = document.createElement('div');
+                line.className = 'end-poem-line' + (color === 'c' ? ' cyan' : '');
+                line.textContent = text === null ? uid + '?' : text;
+                endPoemScroll.appendChild(line);
+            });
+        }
+        function showEndPoem() {
+            if (poemShown || hasFailed) return;
+            poemShown = true;
+            hasWon = true; // 锁定游戏输入
+            buildEndPoem();
+            endPoem.classList.add('show');
+        }
+        function finishPoem() {
+            if (endPoem.classList.contains('fade-out')) return;
+            endPoem.classList.add('fade-out');
+            setTimeout(() => {
+                endPoem.classList.remove('show');
+                endPoem.classList.remove('fade-out');
+                showWinOverlay();
+            }, 400);
+        }
+        if (endPoemScroll) {
+            endPoemScroll.addEventListener('animationend', (event) => {
+                if (event.animationName === 'endpoem-scroll') finishPoem();
+            });
+        }
+
+        // 通关画面：复数公式（小字）从页面中心不断飞出，不覆盖文字与按钮（z 更低）
+        const formulaLayer = document.getElementById('formula-layer');
+        let formulaTimer = null;
+        let formulaIndex = 0;
+        // wiki 里出现过的所有公式（转为可读文本，按顺序循环飞出）
+        const WIN_FORMULAS = [
+            "z = a + bi  (a, b real)",
+            "z* = a - bi",
+            "z · z* = a^2 + b^2",
+            "1/z = (a - bi)/(a^2 + b^2)",
+            "z1* + z2* = (z1 + z2)*",
+            "z1* - z2* = (z1 - z2)*",
+            "z1* · z2* = (z1 · z2)*",
+            "z1*/z2* = (z1/z2)*",
+            "(a + bi) + (c + di) = (a + c) + i(b + d)",
+            "(a + bi) - (c + di) = (a - c) + i(b - d)",
+            "(a + bi)(c + di) = (ac - bd) + i(ad + bc)",
+            "(a + bi)/(c + di) = (ac + bd)/(c^2 + d^2) + i(bc - ad)/(c^2 + d^2)",
+            "r = |z| = sqrt(a^2 + b^2)",
+            "tan θ = b/a",
+            "|z1| + |z2| ≥ |z1 + z2|",
+            "θ = tan^-1 |b/a|",
+            "z = r(cos θ + i sin θ) = r cis θ",
+            "x = r cos θ",
+            "y = r sin θ",
+            "e^(iθ) = cos θ + i sin θ",
+            "e^(iθ) = cis θ",
+            "z1 · z2 = r1 r2 (cos(θ1 + θ2) + i sin(θ1 + θ2))",
+            "z1/z2 = (r1/r2)(cos(θ1 - θ2) + i sin(θ1 - θ2))",
+            "(cos x + i sin x)^n = cos nx + i sin nx",
+            "z^n = r^n (cos nθ + i sin nθ)",
+            "zk = r^(1/n)(cos((θ + 2πk)/n) + i sin((θ + 2πk)/n))"
+        ];
+        function startFormulaFountain() {
+            if (formulaTimer) return;
+            formulaTimer = setInterval(() => {
+                const s = document.createElement('span');
+                s.className = 'formula-fly';
+                s.textContent = WIN_FORMULAS[formulaIndex % WIN_FORMULAS.length];
+                formulaIndex += 1;
+                // 终点飞越屏幕边缘：横轴 ±70vw、纵轴 ±70vh（直接飞出屏幕）
+                const fx = ((Math.random() * 2 - 1) * 70).toFixed(1) + 'vw';
+                const fy = ((Math.random() * 2 - 1) * 70).toFixed(1) + 'vh';
+                s.style.setProperty('--fx', fx);
+                s.style.setProperty('--fy', fy);
+                formulaLayer.appendChild(s);
+                requestAnimationFrame(() => requestAnimationFrame(() => s.classList.add('go')));
+                s.addEventListener('animationend', () => s.remove());
+                setTimeout(() => s.remove(), 2400); // 兜底清理
+            }, 220);
+        }
+
+        if (winBackBtn) {
+            winBackBtn.addEventListener('click', () => {
+                sessionStorage.setItem('open_game_page', 'true');
+                window.location.href = 'index.html';
+            });
+        }
+        if (failBackBtn) {
+            failBackBtn.addEventListener('click', () => {
+                sessionStorage.setItem('open_game_page', 'true');
+                window.location.href = 'index.html';
+            });
+        }
+
+        // ================= Supabase 存档（与 level1-5 一致） =================
+        const supabaseClient = window.supabase
+            ? window.supabase.createClient(
+                "https://mrhcdtaqeintpeoeknlq.supabase.co",
+                "sb_publishable_8sB8D4RFrbLVYffhSkqqVQ_XrJdrG0E"
+            )
+            : null;
+        let currentUserId = null;
+        let currentDisplayUserId = null;
+        (async () => {
+            if (!supabaseClient) return;
+            const { data, error } = await supabaseClient.auth.getSession();
+            if (!error && data && data.session && data.session.user) {
+                currentUserId = data.session.user.id;
+                currentDisplayUserId = data.session.user.user_metadata?.user_id || data.session.user.id;
+            }
+        })();
+        async function persistLevel6Passed() {
+            localStorage.setItem('level6_passed', 'true');
+            if (!supabaseClient || !currentUserId) return;
+            const { error } = await supabaseClient
+                .from('app_state')
+                .upsert({ key: `${currentUserId}:level6_passed`, value: true, updated_at: new Date().toISOString() });
+            if (error) console.error('Failed to save Level 6 completion:', error);
+        }
+
+        // ================= 键盘 =================
+        function modalOpen() {
+            return quizModal.classList.contains('show') || aimModal.classList.contains('show');
+        }
+
+        // ===== 键盘方向键平滑滚动 + 用户缩放 =====
+        let scrollDirX = 0;                    // 左右方向（-1/0/1）
+        const KEY_SCROLL_SPEED = 0.4;          // px/ms：按住方向键的平滑滚动速度
+        let userZoom = 1;                      // 用户缩放倍数（1 = 默认 -50~50 视角）
+        let zoomDirty = false;                 // 缩放待应用到世界 transform（rAF 合并，避免一帧多次写）
+        let zoomAnchor = null;                 // 缩放锚点（视口坐标），用于以鼠标为中心缩放
+        const ZOOM_MIN = 0.3, ZOOM_MAX = 6;
+        function applyWorldZoom(anchor) {
+            if (!introDone) return;
+            let rectBefore = null, s0 = 1;
+            if (anchor) {
+                rectBefore = world.getBoundingClientRect();
+                s0 = world.clientWidth > 0 ? rectBefore.width / world.clientWidth : 1;
+            }
+            const s1 = introTargetScale() * userZoom;
+            world.style.transform = `scale(${s1})`;
+            if (!anchor || !rectBefore) return;
+            // 以鼠标为中心：缩放前后保持鼠标下的世界点位置不变，补偿滚动偏移
+            const ox = rectBefore.left + rectBefore.width / 2;
+            const oy = rectBefore.top + rectBefore.height / 2;
+            const worldX = (anchor.x - ox) / s0;
+            const worldY = (anchor.y - oy) / s0;
+            numberLineWrap.scrollLeft += worldX * (s1 - s0);
+            window.scrollBy(0, worldY * (s1 - s0));
+        }
+        window.addEventListener('keydown', (event) => {
+            if (window.__activePhase !== 'lv6') return;
+            if (modalOpen() || hasWon || hasFailed) return;
+            const key = event.key.toLowerCase();
+            if (key === 'a' || key === 'd' || key === 'w' || key === 's') {
+                pressedKeys.add(key);
+                if (key === 'a' || key === 'd') {
+                    setMoving(true); // 走路动画只跟左右移动有关
+                    if (key === 'a') facingRight = false;
+                    else facingRight = true;
+                }
+            }
+            if (event.key === 'Shift') setSneaking(true);
+            // 方向键左右滚动地图视野（交由 rAF 逐帧平滑滚动）
+            if (event.key === 'ArrowLeft') {
+                scrollDirX = -1;
+                event.preventDefault();
+            } else if (event.key === 'ArrowRight') {
+                scrollDirX = 1;
+                event.preventDefault();
+            }
+            if (event.code === 'Space' || event.key === ' ') {
+                event.preventDefault();
+                if (event.repeat || !introDone) return;
+                playOneTimeJump();
+            }
+            // 数字键 1/2 选择物品栏槽位
+            if (event.key === '1') setSelectedSlot(selectedSlot === 0 ? null : 0);
+            if (event.key === '2') setSelectedSlot(selectedSlot === 1 ? null : 1);
+        });
+        window.addEventListener('keyup', (event) => {
+            if (window.__activePhase !== 'lv6') return;
+            const key = event.key.toLowerCase();
+            if (key === 'a' || key === 'd' || key === 'w' || key === 's') {
+                pressedKeys.delete(key);
+                const stillMoving = pressedKeys.has('a') || pressedKeys.has('d');
+                setMoving(stillMoving);
+            }
+            if (event.key === 'Shift') setSneaking(false);
+            if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+                scrollDirX = 0;
+            }
+        });
+
+        // 点击屏幕 = 使用选中的物品（槽位 1 弩箭 → 询问坐标；槽位 2 地图随选中显示）
+        document.addEventListener('click', (event) => {
+            if (window.__activePhase !== 'lv6') return;
+            if (modalOpen() || hasWon || hasFailed) return;
+            // 点击瞄准/答题弹窗内部不触发弩箭瞄准
+            if (event.target.closest && event.target.closest('.quiz-modal')) return;
+            if (selectedSlot === 0) tryOpenAim();
+        });
+
+        // ================= 主循环 =================
+        let lastFrameTime = performance.now();
+        function frameLoop(now) {
+            if (window.__activePhase !== 'lv6') { requestAnimationFrame(frameLoop); return; }
+            const dt = now - lastFrameTime;
+            lastFrameTime = now;
+
+            // 键盘方向键逐帧平滑滚动地图视野
+            if (scrollDirX !== 0) {
+                numberLineWrap.scrollLeft += scrollDirX * KEY_SCROLL_SPEED * dt;
+            }
+            // 缩放只在每帧应用一次，平滑跟手
+            if (zoomDirty) {
+                zoomDirty = false;
+                applyWorldZoom(zoomAnchor);
+                zoomAnchor = null;
+            }
+
+            // 玩家移动（WASD，限制在半径 55 的圆内）
+            if (introDone && !hasWon && !hasFailed && !modalOpen()) {
+                const step = PLAYER_SPEED * dt;
+                let moved = false;
+                if (pressedKeys.has('a')) { pux -= step; moved = true; }
+                if (pressedKeys.has('d')) { pux += step; moved = true; }
+                if (pressedKeys.has('w')) { puy += step; moved = true; }
+                if (pressedKeys.has('s')) { puy -= step; moved = true; }
+                if (moved) {
+                    const len = Math.hypot(pux, puy);
+                    if (len > PLAY_R) { pux = pux / len * PLAY_R; puy = puy / len * PLAY_R; }
+                    updateStevePosition();
+                }
+            }
+
+            updateDragon(dt);
+            updateArrows(now);
+            checkPortalCollision();
+            requestAnimationFrame(frameLoop);
+        }
+
+        // 触控板捏合 / ctrl+滚轮：缩放游戏世界，而非浏览器页面
+        window.addEventListener('wheel', (event) => {
+            if (window.__activePhase !== 'lv6') return;
+            if (!event.ctrlKey) return;
+            event.preventDefault();
+            if (!introDone || hasWon || hasFailed || modalOpen()) return;
+            zoomAnchor = { x: event.clientX, y: event.clientY };
+            userZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, userZoom * Math.exp(-event.deltaY * 0.003)));
+            zoomDirty = true; // 交由主循环统一应用，避免一帧内多次写 transform
+        }, { passive: false });
+
+        // ================= 启动 =================
+        updateBossBar();
+        refreshMap();
+        updateStevePosition();
+        renderDragon();
+        window.__rankedStartLv6 = startIntro;
+        requestAnimationFrame(frameLoop);
+
+        // 布局/字体/图片加载完成后多时机校正居中（兼容不同屏幕尺寸，让史蒂夫稳定居中）
+        requestAnimationFrame(centerCamera);
+        window.addEventListener('load', centerCamera);
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(centerCamera);
+        setTimeout(centerCamera, 300);
+        setTimeout(centerCamera, 6500); // 开场缩放动画结束后再校正一次
+        })();
+    </script>
+
+    <script>
+        // ================= 寻宝阶段（level3 逻辑照抄，作用域隔离 + id/class 前缀） =================
+        (function () {
+        const scale = document.getElementById('lv3-number-scale');
+        const imaginaryScale = document.getElementById('lv3-imaginary-scale');
+        const imaginaryScaleNeg = document.getElementById('lv3-imaginary-scale-neg');
+        const numberLineWrap = document.querySelector('#phase-lv3 .number-line-wrap');
+        const numberLine = document.querySelector('#phase-lv3 .number-line');
+        const unitPx = numberLine.clientWidth / 40;
+        numberLine.style.setProperty('--imaginary-unit', unitPx + 'px');
+
+        function centerNumberLine() {
+            if (!numberLineWrap || !numberLine) return;
+            // 让原点（number-line 的中心）对齐 wrap 视口中心
+            const wrapRect = numberLineWrap.getBoundingClientRect();
+            const lineRect = numberLine.getBoundingClientRect();
+            const originX = lineRect.left + lineRect.width / 2;
+            const wrapCenterX = wrapRect.left + numberLineWrap.clientWidth / 2;
+            numberLineWrap.scrollLeft += originX - wrapCenterX;
+        }
+
+        function alignAxisInView() {
+            const axisLine = document.querySelector('#phase-lv3 .axis-line');
+            if (!axisLine) return;
+            // 原点（实轴）对齐窗口垂直中心
+            const targetTop = window.innerHeight * 0.5;
+            window.scrollBy(0, axisLine.getBoundingClientRect().top - targetTop);
+        }
+
+        // 顶部预留滚动余量：史蒂夫走到 +20i（含头部高度与跳跃峰值）时，
+        // 页面必须仍有向上滚动的空间，否则跟随会在页面顶部耗尽、让人走出屏幕
+        function ensureTopScrollRoom() {
+            if (!numberLineWrap) return;
+            const vh = window.innerHeight / 100;
+            const needed = 1.1 * unitPx + 2.6 * vh + 80;
+            numberLineWrap.style.paddingTop = Math.max(needed, 2 * vh) + 'px';
+        }
+        ensureTopScrollRoom();
+
+        // 实轴刻度 -20 ~ 20
+        if (scale) {
+            for (let value = -20; value <= 20; value++) {
+                const tick = document.createElement('div');
+                const percent = ((value + 20) / 40) * 100;
+                tick.className = 'axis-tick';
+                tick.style.left = percent + '%';
+                tick.style.height = (value % 5 === 0 ? 25 : 12) + 'px';
+
+                const label = document.createElement('div');
+                label.className = 'axis-label';
+                label.style.left = percent + '%';
+                label.textContent = value;
+
+                scale.appendChild(tick);
+                scale.appendChild(label);
+            }
+        }
+
+        // 虚轴刻度 +1i ~ +20i / -1i ~ -20i
+        if (imaginaryScale) {
+            for (let value = 1; value <= 20; value++) {
+                const tick = document.createElement('div');
+                tick.className = 'imaginary-tick';
+                tick.style.bottom = (value * unitPx - 1) + 'px';
+
+                const label = document.createElement('div');
+                label.className = 'imaginary-label';
+                label.style.bottom = (value * unitPx - 9) + 'px';
+                label.textContent = value + 'i';
+
+                imaginaryScale.appendChild(tick);
+                imaginaryScale.appendChild(label);
+            }
+        }
+
+        if (imaginaryScaleNeg) {
+            for (let value = 1; value <= 20; value++) {
+                const tick = document.createElement('div');
+                tick.className = 'imaginary-tick';
+                tick.style.top = (value * unitPx - 1) + 'px';
+
+                const label = document.createElement('div');
+                label.className = 'imaginary-label';
+                label.style.top = (value * unitPx - 9) + 'px';
+                label.textContent = '-' + value + 'i';
+
+                imaginaryScaleNeg.appendChild(tick);
+                imaginaryScaleNeg.appendChild(label);
+            }
+        }
+
+        // 禁用浏览器滚动位置恢复，防止刷新后覆盖初始居中
+        if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+        requestAnimationFrame(() => {
+            centerNumberLine();
+            alignAxisInView();
+        });
+        window.addEventListener('load', alignAxisInView);
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(alignAxisInView);
+        }
+        setTimeout(alignAxisInView, 300);
+        window.addEventListener('resize', () => {
+            ensureTopScrollRoom();
+            centerNumberLine();
+            alignAxisInView();
+        });
+
+        // ---- 宝藏定义：坐标由房间码 seed 随机生成（见 window.__rankedInitLv3） ----
+        const TREASURE_DEFS = [
+            { name: 'flint',    src: 'pngs/flint.png',            slotIndex: 2, word: 'first' },
+            { name: 'iron',     src: 'pngs/iron_ingot.png',       slotIndex: 3, word: 'second' },
+            { name: 'obsidian', src: 'pngs/Obsidian_JE3_BE2.png', slotIndex: 4, word: 'final' }
+        ];
+        const treasures = TREASURE_DEFS.map((def) => {
+            const el = document.getElementById('lv3-treasure-' + def.name);
+            return { ...def, el, x: 0, y: 0, collected: false };
+        });
+        let digStage = 0; // 0=挖 flint, 1=挖 iron, 2=挖 obsidian
+
+        // ---- Portal：破损(6-8i) + 激活态 ----
+        const ruinedPortal = document.getElementById('lv3-ruined-portal');
+        const netherPortal = document.getElementById('lv3-nether-portal');
+        const PORTAL_X = 6;
+        const PORTAL_Y = -8; // 6 - 8i
+        ruinedPortal.style.transform = `translate(calc(-50% + ${PORTAL_X * unitPx}px), ${-PORTAL_Y * unitPx}px)`;
+        netherPortal.style.transform = `translate(calc(-50% + ${PORTAL_X * unitPx}px), ${-PORTAL_Y * unitPx}px)`;
+
+        // ---- 物品栏：9 格，槽位 1 罗盘 / 槽位 2 镐子 / 槽位 3-5 宝藏 ----
+        const hotbar = document.getElementById('lv3-hotbar');
+        const slotEls = [];
+        const SLOT_SRC = 'pngs/hotbar_offhand_right.png';
+        let selectedSlot = -1;
+
+        // 槽位 1：罗盘 gif
+        const compassInSlot = document.createElement('img');
+        compassInSlot.className = 'slot-item';
+        compassInSlot.src = 'pngs/Lodestone_Compass_JE2_BE2.gif';
+        compassInSlot.alt = 'Compass';
+
+        // 槽位 2：钻石镐 + 耐久条（green_progress 叠在 green_background 上）
+        const pickaxeInSlot = document.createElement('img');
+        pickaxeInSlot.className = 'slot-item pickaxe-in-slot';
+        pickaxeInSlot.src = 'pngs/diamond_pickaxe.png';
+        pickaxeInSlot.alt = 'Diamond Pickaxe';
+        const durabilityBar = document.createElement('div');
+        durabilityBar.className = 'durability-bar';
+        const durabilityBg = document.createElement('img');
+        durabilityBg.src = 'pngs/green_background.png';
+        durabilityBg.alt = '';
+        const durabilityProgress = document.createElement('img');
+        durabilityProgress.src = 'pngs/green_progress.png';
+        durabilityProgress.alt = '';
+        durabilityBar.appendChild(durabilityBg);
+        durabilityBar.appendChild(durabilityProgress);
+
+        // 槽位 3-5：宝藏图标（挖到后显示）
+        const treasureSlotImgs = treasures.map((t) => {
+            const img = document.createElement('img');
+            img.className = 'slot-item treasure-in-slot';
+            img.src = t.src;
+            img.alt = t.name;
+            return img;
+        });
+
+        for (let i = 0; i < 9; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'hotbar-slot';
+            const baseImg = document.createElement('img');
+            baseImg.src = SLOT_SRC;
+            baseImg.alt = '';
+            slot.appendChild(baseImg);
+            if (i === 0) slot.appendChild(compassInSlot);
+            if (i === 1) { slot.appendChild(pickaxeInSlot); slot.appendChild(durabilityBar); }
+            if (i >= 2 && i <= 4) slot.appendChild(treasureSlotImgs[i - 2]);
+            const selImg = document.createElement('img');
+            selImg.className = 'slot-selection';
+            selImg.src = 'pngs/hotbar_selection.png';
+            selImg.alt = '';
+            slot.appendChild(selImg);
+            slot.addEventListener('click', (event) => {
+                event.stopPropagation();
+                if (pickDragMoved) { pickDragMoved = false; return; } // 拖拽后的误触 click 不切换选中
+                selectSlot(i);
+            });
+            hotbar.appendChild(slot);
+            slotEls.push(slot);
+        }
+        hotbar.classList.add('show', 'clickable');
+
+        function selectSlot(index) {
+            selectedSlot = (selectedSlot === index) ? -1 : index;
+            slotEls.forEach((el, i) => el.classList.toggle('selected', i === selectedSlot));
+            updateCompassTooltipVisibility();
+            // 选中后立即刷新文本，不依赖下一帧
+            updateCompassTooltip();
+        }
+
+        // ---- 罗盘悬浮窗：实时显示宝藏与玩家的相对位置 ----
+        const compassTooltip = document.getElementById('lv3-compass-tooltip');
+
+        function updateCompassTooltipVisibility() {
+            compassTooltip.classList.toggle('show', selectedSlot === 0);
+        }
+
+        function formatComplexCoord(real, imag) {
+            if (real === 0 && imag === 0) return '0';
+            if (imag === 0) return `${real}`;
+            if (real === 0) return `${imag}i`;
+            if (imag > 0) return `${real} + ${imag}i`;
+            return `${real} - ${Math.abs(imag)}i`;
+        }
+
+        function formatFactor(real, imag) {
+            return '(' + real + (imag >= 0 ? '+' : '-') + Math.abs(imag) + 'i)';
+        }
+
+        function updateCompassTooltip() {
+            if (selectedSlot !== 0) return;
+            const playerRe = posX / unitPx;
+            const playerIm = -posY / unitPx;
+            if (digStage < 2) {
+                const t = treasures[digStage];
+                const relRe = t.x - playerRe;
+                const relIm = t.y - playerIm;
+                compassTooltip.textContent =
+                    `The ${t.word} treasure is relative (${formatComplexCoord(Math.round(relRe), Math.round(relIm))}) to you!`;
+            } else {
+                const t = treasures[digStage];
+                if (t.factors) {
+                    const f = t.factors;
+                    compassTooltip.textContent = "The " + t.word + " treasure is at " + formatFactor(f.a, f.b) + formatFactor(f.c, f.d) + ".";
+                } else {
+                    const relRe = t.x - playerRe;
+                    const relIm = t.y - playerIm;
+                    compassTooltip.textContent =
+                        `The ${t.word} treasure is relative (${formatComplexCoord(Math.round(relRe), Math.round(relIm))}) to you!`;
+                }
+            }
+        }
+
+        // ---- 钻石镐：耐久 5，选中槽位 2 后点击屏幕使用 ----
+        const durabilityTotal = 5;
+        let durabilityLeft = durabilityTotal;
+
+        function updateDurabilityBar() {
+            durabilityProgress.style.width = (durabilityLeft / durabilityTotal) * 100 + '%';
+        }
+
+        const noTreasureBanner = document.getElementById('lv3-no-treasure-banner');
+        let noTreasureTimeout = null;
+
+        function showNoTreasure() {
+            noTreasureBanner.classList.add('show');
+            if (noTreasureTimeout) clearTimeout(noTreasureTimeout);
+            // 渐显后停留 3 秒，再渐隐
+            noTreasureTimeout = setTimeout(() => {
+                noTreasureBanner.classList.remove('show');
+            }, 3400);
+        }
+
+        // 挖掘判定：左上角实时坐标（取整显示值）与目标坐标完全一致才算挖中
+        function usePickaxe() {
+            if (durabilityLeft <= 0 || hasWon || hasFailed) return;
+            durabilityLeft -= 1;
+            updateDurabilityBar();
+
+            const t = treasures[digStage];
+            const playerRe = Math.round(posX / unitPx);
+            const playerIm = Math.round(-posY / unitPx);
+            if (playerRe === t.x && playerIm === t.y) {
+                revealTreasure(t);
+            } else {
+                showNoTreasure();
+            }
+
+            // 失败判定：耐久归零且未完成第 7 步（未拿到 obsidian）
+            if (durabilityLeft === 0 && !treasures[2].collected) {
+                setTimeout(() => showFailOverlay(), 600);
+            }
+        }
+
+        // ---- 使用镐子：把 pickaxe 拖到史蒂夫身上/脚下（level2 雪花同款拖拽）----
+        let pickDragGhost = null;
+        let pickDragMoved = false;
+        pickaxeInSlot.draggable = false;
+
+        function movePickGhost(event, isInitial) {
+            if (!pickDragGhost) return;
+            if (!isInitial) pickDragMoved = true;
+            pickDragGhost.style.left = `${event.clientX}px`;
+            pickDragGhost.style.top = `${event.clientY}px`;
+        }
+
+        pickaxeInSlot.addEventListener('pointerdown', (event) => {
+            // 只响应左键，且必须先选中槽位 2（镐子所在槽）
+            if (event.button !== 0 || selectedSlot !== 1) return;
+            event.preventDefault();
+            pickDragMoved = false;
+            pickaxeInSlot.setPointerCapture(event.pointerId);
+
+            pickDragGhost = document.createElement('img');
+            pickDragGhost.src = 'pngs/diamond_pickaxe.png';
+            pickDragGhost.className = 'item-drag-ghost';
+            pickDragGhost.style.height = `${pickaxeInSlot.getBoundingClientRect().height}px`;
+            document.body.appendChild(pickDragGhost);
+            movePickGhost(event, true);
+        });
+
+        pickaxeInSlot.addEventListener('pointermove', movePickGhost);
+
+        function endPickDrag(event) {
+            if (!pickDragGhost) return;
+            pickDragGhost.remove();
+            pickDragGhost = null;
+            if (!event) return;
+            // 拖回物品栏上松手 = 取消，不挖掘
+            const hb = hotbar.getBoundingClientRect();
+            if (event.clientX >= hb.left && event.clientX <= hb.right &&
+                event.clientY >= hb.top && event.clientY <= hb.bottom) return;
+            // 任意位置松手都算一次挖掘：站对位置挖出宝藏，站错位置弹出 NO TREASURE FOUND
+            usePickaxe();
+        }
+        pickaxeInSlot.addEventListener('pointerup', endPickDrag);
+        pickaxeInSlot.addEventListener('pointercancel', () => endPickDrag(null));
+
+        // ---- 挖到宝藏：原地显示 → 飞入物品栏对应槽位 ----
+        function revealTreasure(t) {
+            if (t.collected) return;
+            t.collected = true;
+            t.el.classList.add('revealed');
+            if (t.name === 'obsidian') showObsidianAdvancement();
+
+            // 原地停留片刻再飞向物品栏
+            setTimeout(() => flyTreasureToSlot(t), 500);
+        }
+
+        // 成就弹窗：滑入停留 3 秒后弹回（交互与 level1 一致）
+        const advancementToast = document.getElementById('lv3-advancement-toast');
+        let advancementToastTimer = null;
+        function showObsidianAdvancement() {
+            if (!advancementToast) return;
+            advancementToast.classList.add('show');
+            if (advancementToastTimer) clearTimeout(advancementToastTimer);
+            advancementToastTimer = setTimeout(() => advancementToast.classList.remove('show'), 3000);
+        }
+
+        function flyTreasureToSlot(t) {
+            const rect = t.el.getBoundingClientRect();
+            t.el.classList.add('picked');
+
+            const fly = document.createElement('img');
+            fly.src = t.src;
+            fly.className = 'potion-fly';
+            fly.style.left = rect.left + 'px';
+            fly.style.top = rect.top + 'px';
+            fly.style.height = rect.height + 'px';
+            document.body.appendChild(fly);
+
+            const slotImg = treasureSlotImgs[TREASURE_DEFS.findIndex((d) => d.name === t.name)];
+            const targetRect = slotEls[t.slotIndex].getBoundingClientRect();
+            const targetHeight = targetRect.height * 0.68;
+            const targetWidth = rect.width * (targetHeight / rect.height);
+
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    fly.style.left = (targetRect.left + targetRect.width / 2 - targetWidth / 2) + 'px';
+                    fly.style.top = (targetRect.top + targetRect.height / 2 - targetHeight / 2) + 'px';
+                    fly.style.height = targetHeight + 'px';
+                });
+            });
+
+            fly.addEventListener('transitionend', () => {
+                fly.remove();
+                slotImg.classList.add('show');
+                // 宝藏到手后才切换到下一阶段的罗盘提示
+                digStage = Math.min(digStage + 1, 2);
+            }, { once: true });
+        }
+
+        // ---- 开场 Tips 弹窗：停留 3 秒后弹回 ----
+        const tipsToast = document.getElementById('lv3-tips-toast');
+
+        function showTipsToastBriefly(durationMs) {
+            tipsToast.classList.add('show');
+            setTimeout(() => tipsToast.classList.remove('show'), durationMs);
+        }
+
+        setTimeout(() => showTipsToastBriefly(3000), 400);
+
+        // ---- 通关 / 失败画面 ----
+        const winOverlay = document.getElementById('lv3-win-overlay');
+        const failOverlay = document.getElementById('lv3-fail-overlay');
+        let hasWon = false;
+        let hasFailed = false;
+
+        document.getElementById('lv3-win-back-btn').addEventListener('click', () => {
+            sessionStorage.setItem('open_game_page', 'true');
+            window.location.href = 'index.html';
+        });
+
+        document.getElementById('lv3-fail-retry-btn').addEventListener('click', () => {
+            // 重置 level3：整页刷新即可恢复初始状态
+            window.location.reload();
+        });
+
+        function showWinOverlay() {
+            if (hasWon || hasFailed) return;
+            hasWon = true;
+            persistLevel3Passed();
+            winOverlay.classList.add('show');
+        }
+
+        // 与 level1/2 相同的 Supabase 客户端，用于保存通关状态
+        const supabaseClient = window.supabase
+            ? window.supabase.createClient(
+                "https://mrhcdtaqeintpeoeknlq.supabase.co",
+                "sb_publishable_8sB8D4RFrbLVYffhSkqqVQ_XrJdrG0E"
+            )
+            : null;
+        let currentUserId = null;
+
+        (async () => {
+            if (!supabaseClient) return;
+            const { data, error } = await supabaseClient.auth.getSession();
+            if (!error && data && data.session && data.session.user) {
+                currentUserId = data.session.user.id;
+            }
+        })();
+
+        async function persistLevel3Passed() {
+            localStorage.setItem('level3_passed', 'true');
+            if (!supabaseClient || !currentUserId) return;
+            const { error } = await supabaseClient
+                .from('app_state')
+                .upsert({ key: `${currentUserId}:level3_passed`, value: true, updated_at: new Date().toISOString() });
+            if (error) console.error('Failed to save Level 3 completion:', error);
+        }
+
+        function showFailOverlay() {
+            if (hasFailed || hasWon) return;
+            hasFailed = true;
+            failOverlay.classList.add('show');
+            if (window.onRankedLost) window.onRankedLost('lv3');
+        }
+
+        // ---- Portal 激活与通关判定 ----
+        let portalActivated = false;
+        let portalConsuming = false;
+        let portalDwellStart = null;
+        let portalHintCooldownUntil = 0;
+
+        function allTreasuresCollected() {
+            return treasures.every((t) => t.collected);
+        }
+
+        // 材料消耗动画：物品栏的 flint/iron/obsidian 依次飞向 portal 并消失，
+        // 三样全部到达后，破损 portal 才换成激活的 portal
+        function consumeMaterialsAndActivatePortal() {
+            portalConsuming = true;
+
+            const portalRect = ruinedPortal.getBoundingClientRect();
+            const targetX = portalRect.left + portalRect.width / 2;
+            const targetY = portalRect.top + portalRect.height / 2;
+
+            let arrivedCount = 0;
+            treasures.forEach((t, index) => {
+                const slotImg = treasureSlotImgs[index];
+                const rect = slotImg.getBoundingClientRect();
+
+                // 槽位图标立即隐藏，由同位置起飞的飞行副本代替
+                slotImg.classList.remove('show');
+
+                const fly = document.createElement('img');
+                fly.src = t.src;
+                fly.className = 'potion-fly';
+                fly.style.left = rect.left + 'px';
+                fly.style.top = rect.top + 'px';
+                fly.style.height = rect.height + 'px';
+                document.body.appendChild(fly);
+
+                // 依次起飞，间隔 0.2s
+                setTimeout(() => {
+                    fly.style.left = (targetX - rect.width / 2) + 'px';
+                    fly.style.top = (targetY - rect.height / 2) + 'px';
+                }, index * 200);
+
+                fly.addEventListener('transitionend', () => {
+                    fly.remove();
+                    arrivedCount += 1;
+                    if (arrivedCount === treasures.length) {
+                        // 全部材料到位：破损 portal 变成激活的 portal
+                        setTimeout(() => {
+                            portalActivated = true;
+                            ruinedPortal.style.visibility = 'hidden';
+                            netherPortal.classList.add('revealed');
+                        }, 200);
+                    }
+                }, { once: true });
+            });
+        }
+
+        function playerInPortalArea(insetXRatio, insetYRatio) {
+            if (!steve || !ruinedPortal) return false;
+            const portalRect = (portalActivated ? netherPortal : ruinedPortal).getBoundingClientRect();
+            const insetX = portalRect.width * insetXRatio;
+            const insetY = portalRect.height * insetYRatio;
+            const steveRect = steve.getBoundingClientRect();
+            const cx = steveRect.left + steveRect.width / 2;
+            const cy = steveRect.top + steveRect.height / 2;
+            return (
+                cx >= portalRect.left + insetX &&
+                cx <= portalRect.right - insetX &&
+                cy >= portalRect.top + insetY &&
+                cy <= portalRect.bottom - insetY
+            );
+        }
+
+        function checkPortal() {
+            if (hasWon || hasFailed) return;
+
+            if (portalActivated) {
+                // 激活后玩家在紫色区域停留 2 秒即过关
+                if (playerInPortalArea(0.22, 0.12)) {
+                    if (portalDwellStart === null) portalDwellStart = performance.now();
+                    if (performance.now() - portalDwellStart >= 2000) { if (window.onLv3Done) window.onLv3Done(); }
+                } else {
+                    portalDwellStart = null;
+                }
+                return;
+            }
+
+            if (!portalConsuming && allTreasuresCollected() && playerInPortalArea(0.15, 0.05)) {
+                // 材料齐了：三样材料飞向 portal，全部到达后才激活
+                consumeMaterialsAndActivatePortal();
+            } else if (!portalConsuming && !allTreasuresCollected() && playerInPortalArea(0.15, 0.05)) {
+                // 材料不够：重新提示（8 秒节流）
+                const now = performance.now();
+                if (now >= portalHintCooldownUntil) {
+                    portalHintCooldownUntil = now + 8000;
+                    showTipsToastBriefly(3000);
+                }
+            }
+        }
+
+        // ---- Steve：与 level2 相同的行走逻辑，但可以进入负复数区域 ----
+        const steve = document.getElementById('lv3-steve');
+        const steveRun = document.getElementById('lv3-steve-run');
+        const STEVE_STANDING_SRC = 'pngs/Steve_JE5.png.webp';
+        const STEVE_SNEAKING_SRC = 'pngs/Sneaking_Steve.png.webp';
+        let isSneaking = false;
+        let isMoving = false;
+        let sprintToggle = false;
+        let sprintInterval = null;
+
+        function updateSteveSprite() {
+            if (!steve) return;
+            const running = isMoving && !isSneaking && sprintToggle;
+            if (steveRun) steveRun.classList.toggle('show', running);
+            steve.classList.toggle('steve-hidden', running);
+            steve.src = isSneaking ? STEVE_SNEAKING_SRC : STEVE_STANDING_SRC;
+            steve.classList.toggle('steve-sneaking', isSneaking);
+        }
+
+        function setSneaking(sneaking) {
+            if (!steve || isSneaking === sneaking) return;
+            isSneaking = sneaking;
+            updateSteveSprite();
+        }
+
+        function setMoving(moving) {
+            if (!steve || isMoving === moving) return;
+            isMoving = moving;
+            if (moving && !sprintInterval) {
+                sprintToggle = true;
+                sprintInterval = setInterval(() => {
+                    if (!isMoving || isSneaking) return;
+                    sprintToggle = !sprintToggle;
+                    updateSteveSprite();
+                }, 100);
+            } else if (!moving && sprintInterval) {
+                clearInterval(sprintInterval);
+                sprintInterval = null;
+                sprintToggle = false;
+            }
+            updateSteveSprite();
+        }
+
+        // 活动范围：实部 ±20，虚部 ±20
+        const moveMaxX = 20 * unitPx;
+        const moveMaxY = 20 * unitPx;
+        const moveSpeed = unitPx * 0.006;
+        const STEVE_JUMPED_KEY = 'steve_has_jumped';
+
+        let posX = 0;
+        let posY = 0;
+        let jumpOffset = 0;
+        let flightUnlocked = localStorage.getItem(STEVE_JUMPED_KEY) === 'true';
+        const pressedKeys = new Set();
+        let facingRight = false;
+
+        let lastPosX = null;
+        let lastPosY = null;
+        let lastJumpOffset = null;
+
+        const coordZLine = document.getElementById('lv3-coord-z');
+
+        function updateSteveCoordLabel(totalY) {
+            if (!coordZLine || !steve) return;
+            const real = Math.round(posX / unitPx);
+            const imag = Math.round(-totalY / unitPx);
+            coordZLine.textContent = `z = ${formatComplexCoord(real, imag)}`;
+        }
+
+        function updateStevePosition() {
+            if (!steve) return;
+            const totalY = posY + jumpOffset;
+            const flip = facingRight ? ' scaleX(-1)' : '';
+            const transform = `translate(calc(-50% + ${posX}px), ${totalY}px)${flip}`;
+            steve.style.transform = transform;
+            if (steveRun) steveRun.style.transform = transform;
+            updateSteveCoordLabel(totalY);
+            // 只有史蒂夫真正移动时才跟随镜头，方便玩家自由滚动找东西
+            if (posX !== lastPosX || posY !== lastPosY || jumpOffset !== lastJumpOffset) {
+                followSteveIntoView();
+            }
+            lastPosX = posX;
+            lastPosY = posY;
+            lastJumpOffset = jumpOffset;
+        }
+
+        function playOneTimeJump() {
+            const peakHeight = unitPx * 1.1;
+            const timeToPeak = 0.225;
+            const gravity = (2 * peakHeight) / (timeToPeak * timeToPeak);
+            const initialVelocity = gravity * timeToPeak;
+            const start = performance.now();
+            function step(now) {
+                const t = (now - start) / 1000;
+                const height = initialVelocity * t - 0.5 * gravity * t * t;
+                if (height > 0) {
+                    jumpOffset = -height;
+                    updateStevePosition();
+                    requestAnimationFrame(step);
+                } else {
+                    jumpOffset = 0;
+                    updateStevePosition();
+                }
+            }
+            requestAnimationFrame(step);
+        }
+
+        function updateFacingDirection() {
+            if (pressedKeys.has('d')) facingRight = true;
+            else if (pressedKeys.has('a')) facingRight = false;
+        }
+
+        // 史蒂夫只能在屏幕中央 40% 区域内活动：碰到距边 30% 的界线就以 1:1 同速滚动页面
+        const EDGE = 0.3;
+
+        function followSteveIntoView() {
+            if (!steve || !numberLineWrap) return;
+            let steveRect = steve.getBoundingClientRect();
+
+            const wrapRect = numberLineWrap.getBoundingClientRect();
+            const marginX = numberLineWrap.clientWidth * EDGE;
+            const leftLimit = wrapRect.left + marginX;
+            const rightLimit = wrapRect.left + numberLineWrap.clientWidth - marginX;
+            if (steveRect.left < leftLimit) {
+                numberLineWrap.scrollLeft -= leftLimit - steveRect.left;
+            } else if (steveRect.right > rightLimit) {
+                numberLineWrap.scrollLeft += steveRect.right - rightLimit;
+            }
+
+            const marginY = window.innerHeight * EDGE;
+            if (steveRect.top < marginY) {
+                window.scrollBy(0, steveRect.top - marginY);
+            } else if (steveRect.bottom > window.innerHeight - marginY) {
+                window.scrollBy(0, steveRect.bottom - (window.innerHeight - marginY));
+            }
+
+            // 兜底校验：增量滚动若被浏览器（触控板动量/合成器/滚动锚定）吞掉，
+            // 史蒂夫仍可能在边界外，此时用 scrollIntoView 强制拉回视口内
+            steveRect = steve.getBoundingClientRect();
+            if (steveRect.top < 0 || steveRect.bottom > window.innerHeight) {
+                steve.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
+            }
+        }
+
+        window.addEventListener('keydown', (event) => {
+            if (window.__activePhase !== 'lv3') return;
+            const key = event.key.toLowerCase();
+            // 数字键 1-5 选中对应物品栏槽位
+            if (['1', '2', '3', '4', '5'].includes(event.key)) {
+                selectSlot(parseInt(event.key, 10) - 1);
+                return;
+            }
+            if (key === 'a' || key === 'd' || key === 'w' || key === 's') {
+                pressedKeys.add(key);
+                if (key === 'a' || key === 'd') setMoving(true);
+                updateFacingDirection();
+            }
+            if (event.key === 'Shift') {
+                setSneaking(true);
+            }
+            if (event.code === 'Space' || event.key === ' ') {
+                event.preventDefault();
+                if (event.repeat) return;
+                localStorage.setItem(STEVE_JUMPED_KEY, 'true');
+                flightUnlocked = true;
+                playOneTimeJump();
+            }
+        });
+
+        window.addEventListener('keyup', (event) => {
+            if (window.__activePhase !== 'lv3') return;
+            const key = event.key.toLowerCase();
+            if (key === 'a' || key === 'd' || key === 'w' || key === 's') {
+                pressedKeys.delete(key);
+                if (key === 'a' || key === 'd') {
+                    const stillMoving = pressedKeys.has('a') || pressedKeys.has('d');
+                    setMoving(stillMoving);
+                }
+                updateFacingDirection();
+            }
+            if (event.key === 'Shift') {
+                setSneaking(false);
+            }
+        });
+
+        let lastFrameTime = performance.now();
+        function frameLoop(now) {
+            if (window.__activePhase !== 'lv3') { requestAnimationFrame(frameLoop); return; }
+            const dt = now - lastFrameTime;
+            lastFrameTime = now;
+
+            if (pressedKeys.has('a')) posX = Math.max(posX - moveSpeed * dt, -moveMaxX);
+            if (pressedKeys.has('d')) posX = Math.min(posX + moveSpeed * dt, moveMaxX);
+
+            if (flightUnlocked) {
+                // W 向上（+i 方向），S 向下（-i 方向），都可到达 ±20
+                if (pressedKeys.has('w')) posY = Math.max(posY - moveSpeed * dt, -moveMaxY);
+                if (pressedKeys.has('s')) posY = Math.min(posY + moveSpeed * dt, moveMaxY);
+            }
+
+            updateStevePosition();
+            updateCompassTooltip();
+            checkPortal();
+            requestAnimationFrame(frameLoop);
+        }
+        requestAnimationFrame(frameLoop);
+        // 初始帧：立即渲染坐标/罗盘/耐久条，不依赖首次 rAF 触发
+        updateStevePosition();
+        updateCompassTooltip();
+        updateDurabilityBar();
+
+        // 宝藏坐标初始化（由大厅编排在比赛开始时传入 seed）
+        window.__rankedInitLv3 = function (seed) {
+            const coords = window.genTreasureCoords(seed);
+            treasures.forEach((t, i) => {
+                t.x = coords[i].x;
+                t.y = coords[i].y;
+                t.factors = coords[i].factors || null;
+                t.el.style.left = `calc(50% + ${t.x * unitPx}px)`;
+                t.el.style.top = `calc(50% - ${t.y * unitPx}px)`;
+            });
+        };
+        window.__rankedCenterLv3 = function () {
+            centerNumberLine();
+            alignAxisInView();
+        };
+        window.__rankedLv3Tips = function () {
+            showTipsToastBriefly(3000);
+        };
+        })();
+    </script>
+</body>
+</html>
